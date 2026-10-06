@@ -28,7 +28,78 @@
 ## Project setup
 
 ```bash
-$ npm install
+npm install
+```
+
+## PostgreSQL with Docker
+
+Copy `.env.example` to `.env` and change `POSTGRES_PASSWORD` if desired. The
+example password is only for local development; do not use it in production or
+commit `.env`. `JWT_SECRET` must be a private random value of at least 32 bytes;
+generate one locally and do not commit it.
+
+```powershell
+Copy-Item .env.example .env
+$rng = [System.Security.Cryptography.RandomNumberGenerator]::Create()
+$bytes = New-Object byte[] 32
+$rng.GetBytes($bytes)
+$secret = [Convert]::ToBase64String($bytes)
+$envLines = (Get-Content .env) -replace '^JWT_SECRET=.*$', "JWT_SECRET=$secret"
+[System.IO.File]::WriteAllLines((Resolve-Path .env), $envLines, (New-Object System.Text.UTF8Encoding($false)))
+$rng.Dispose()
+npm run db:up
+npm run db:deploy
+npm run prisma:generate
+```
+
+The database runs on `localhost:5433` and keeps its data in the
+`postgres_data` Docker volume. NestJS reads `DATABASE_URL` from `.env` and
+connects to PostgreSQL through Prisma. The initial Prisma schema creates a
+`User` table; edit `prisma/schema.prisma` and create a new migration whenever
+the data model changes.
+
+```bash
+npm run start:dev
+```
+
+Useful database commands:
+
+```bash
+npm run db:logs
+npm run db:studio
+npm run db:down
+```
+
+## Register a user
+
+Start the API with `npm run start:dev`, then send a JSON request:
+
+```bash
+curl -X POST http://localhost:3000/auth/register \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"person@example.com\",\"password\":\"correct horse battery staple\",\"name\":\"Person\"}"
+```
+
+Passwords must contain 12 to 128 characters. The API stores an Argon2id hash,
+normalizes e-mail addresses to lowercase, and returns the created user's public
+fields without the password hash.
+
+## Log in
+
+Send the same e-mail and password to receive a signed JWT access token valid
+for 15 minutes:
+
+```bash
+curl -X POST http://localhost:3000/auth/login \
+  -H "Content-Type: application/json" \
+  -d "{\"email\":\"person@example.com\",\"password\":\"correct horse battery staple\"}"
+```
+
+Use the access token to access the protected profile endpoint:
+
+```bash
+curl http://localhost:3000/auth/me \
+  -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
 ## Compile and run the project
