@@ -21,5 +21,5 @@ export const metadata: Metadata = {
   description: "Découvrez Radoko, le futur annuaire de médecins à Madagascar : recherche par spécialité et ville, fiches vérifiées et contact direct.",
 };
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  return <html lang="fr" className={`${inter.variable} ${manrope.variable}`}><body>{children}</body></html>;
+  return <html lang="fr" className={`${inter.variable} ${manrope.variable}`} data-scroll-behavior="smooth"><body>{children}</body></html>;
 }

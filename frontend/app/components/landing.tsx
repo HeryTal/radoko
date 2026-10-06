@@ -5,6 +5,7 @@ import { Logo } from "./logo";
 import { Anatomy } from "./anatomy";
 import { AnatomyJourney } from "./anatomy-journey";
 import { Icon } from "./icons";
+import Link from "next/link";
 
 const specialties = [
   { name: "Médecine générale", icon: "plus", detail: "Votre premier interlocuteur santé" },
@@ -20,7 +21,7 @@ export function Landing() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [specialty, setSpecialty] = useState("");
   const [city, setCity] = useState("");
-  const [dialog, setDialog] = useState<"search" | "doctor" | "privacy" | null>(null);
+  const [dialog, setDialog] = useState<"search" | "privacy" | null>(null);
   const modal = useRef<HTMLDialogElement>(null);
   const search = useRef<HTMLFormElement>(null);
 
@@ -55,7 +56,10 @@ export function Landing() {
           <a href="#exploration" onClick={() => setMenuOpen(false)}>Explorer le corps</a>
           <a href="#comment-ca-marche" onClick={() => setMenuOpen(false)}>Comment ça marche</a>
         </nav>
-        <a className="nav-cta" href="#medecins">Vous êtes médecin ? <Icon name="arrow" /></a>
+        <div className="header-actions">
+          <Link className="nav-login" href="/medecins/connexion">Se connecter</Link>
+          <Link className="nav-cta" href="/medecins/inscription">Vous êtes médecin ? <Icon name="arrow" /></Link>
+        </div>
         <button className="menu-toggle" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? "Fermer le menu" : "Ouvrir le menu"} aria-expanded={menuOpen} aria-controls="main-navigation"><Icon name={menuOpen ? "close" : "menu"} /></button>
       </header>
 
@@ -105,7 +109,7 @@ export function Landing() {
 
         <section className="doctor-section section-wrap" id="medecins" aria-labelledby="doctor-heading">
           <div className="doctor-art" aria-hidden="true"><div className="doctor-orbit" /><span className="large-cross">+</span><span className="art-note">LE LIEN QUI FAIT DU BIEN.</span><span className="art-coordinate">18°52′ S · 47°30′ E</span></div>
-          <div className="doctor-content"><span className="eyebrow">03 / REJOINDRE RADOKO</span><h2 id="doctor-heading">Vous prenez soin d’eux.<br /><em>On vous rapproche.</em></h2><p>Faites connaître votre pratique aux patients de votre région, avec une fiche qui vous ressemble.</p><ul><li><Icon name="shield" /> Une fiche vérifiée par notre équipe</li><li><Icon name="plus" /> Vos informations, gérées depuis votre espace</li><li><Icon name="eye" /> Une visibilité renforcée, en option via mobile money</li></ul><button className="primary-button" onClick={() => setDialog("doctor")}>Découvrir l’espace médecin <Icon name="arrow" /></button><span className="doctor-note">En préparation · Pour les professionnels à Madagascar</span></div>
+          <div className="doctor-content"><span className="eyebrow">03 / REJOINDRE RADOKO</span><h2 id="doctor-heading">Vous prenez soin d’eux.<br /><em>On vous rapproche.</em></h2><p>Faites connaître votre pratique aux patients de votre région, avec une fiche qui vous ressemble.</p><ul><li><Icon name="shield" /> Une fiche vérifiée par notre équipe</li><li><Icon name="plus" /> Vos informations, gérées depuis votre espace</li><li><Icon name="eye" /> Une visibilité renforcée, en option via mobile money</li></ul><Link className="primary-button" href="/medecins/inscription">Créer mon espace médecin <Icon name="arrow" /></Link><span className="doctor-note">Inscription réservée aux professionnels de santé à Madagascar</span></div>
         </section>
       </main>
 
@@ -114,8 +118,8 @@ export function Landing() {
       <dialog ref={modal} className="modal" onCancel={() => setDialog(null)} onClose={() => setDialog(null)} onClick={event => { if (event.target === event.currentTarget) setDialog(null); }} aria-labelledby="dialog-heading">
         <button className="modal-close" aria-label="Fermer" onClick={() => setDialog(null)}><Icon name="close" /></button>
         <span className="eyebrow">RADOKO · EN PRÉPARATION</span>
-        <h2 id="dialog-heading">{dialog === "search" ? "Votre recherche" : dialog === "doctor" ? "Votre futur espace médecin." : "Votre confidentialité."}</h2>
-        {dialog === "search" ? <><div className="search-summary"><span>{specialty || "Toutes les spécialités"}</span><span><Icon name="pin" /> {city || "Toutes les villes"}</span></div><div className="empty-state"><Icon name="search" /><h3>L’annuaire prend forme.</h3><p>Aucun profil n’est publié pour le moment. Les premières fiches seront disponibles après leur vérification par notre équipe.</p></div><button className="primary-button" onClick={() => setDialog(null)}>Modifier ma recherche <Icon name="arrow" /></button></> : dialog === "doctor" ? <><p>Un espace pour créer et mettre à jour votre fiche, présenter votre pratique et être trouvé par les patients de votre ville.</p><ol className="doctor-process"><li>Renseignez votre parcours et les coordonnées du cabinet.</li><li>Notre équipe vérifie votre profil avant publication.</li><li>Choisissez, si vous le souhaitez, une mise en avant payante via mobile money, signalée aux patients.</li></ol><div className="modal-notice">Les inscriptions et les paiements ne sont pas encore ouverts. Aucune information n’est collectée sur cette page.</div><button className="primary-button" onClick={() => setDialog(null)}>C’est compris <Icon name="arrow" /></button></> : <><p>Cette page de présentation n’utilise aucun formulaire d’inscription, paiement ou outil de mesure d’audience.</p><p>Vos choix de spécialité et de ville restent dans la page : ils ne sont ni enregistrés ni envoyés à un annuaire. Ils sont effacés lorsque vous rechargez la page.</p><p>Les informations concernant le traitement des données seront complétées avant l’ouverture du service.</p></>}
+        <h2 id="dialog-heading">{dialog === "search" ? "Votre recherche" : "Votre confidentialité."}</h2>
+        {dialog === "search" ? <><div className="search-summary"><span>{specialty || "Toutes les spécialités"}</span><span><Icon name="pin" /> {city || "Toutes les villes"}</span></div><div className="empty-state"><Icon name="search" /><h3>L’annuaire prend forme.</h3><p>Aucun profil n’est publié pour le moment. Les premières fiches seront disponibles après leur vérification par notre équipe.</p></div><button className="primary-button" onClick={() => setDialog(null)}>Modifier ma recherche <Icon name="arrow" /></button></> : <><p>Cette page de présentation n’utilise aucun formulaire d’inscription, paiement ou outil de mesure d’audience.</p><p>Vos choix de spécialité et de ville restent dans la page : ils ne sont ni enregistrés ni envoyés à un annuaire. Ils sont effacés lorsque vous rechargez la page.</p><p>Les informations concernant le traitement des données seront complétées avant l’ouverture du service.</p></>}
       </dialog>
     </>
   );
