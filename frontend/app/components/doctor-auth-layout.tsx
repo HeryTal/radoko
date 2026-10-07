@@ -17,7 +17,7 @@ export function DoctorAuthLayout({ children }: Readonly<{ children: ReactNode }>
       </main>
       <footer className="doctor-auth-footer">
         <span>© 2026 Radoko · Pensé pour Madagascar</span>
-        <span>Vos informations ne sont pas envoyées depuis cette maquette.</span>
+        <span>Vos informations sont transmises de manière sécurisée.</span>
       </footer>
     </div>
   );

@@ -4,6 +4,7 @@ import { useState, type FormEvent } from "react";
 import Link from "next/link";
 import { DoctorAuthIllustration } from "./doctor-auth-illustration";
 import { Icon } from "./icons";
+import { login, registerDoctor } from "../lib/auth-api";
 
 type DoctorAuthFormProps = {
   mode: "register" | "login";
@@ -32,24 +33,51 @@ const cities = [
 export function DoctorAuthForm({ mode }: DoctorAuthFormProps) {
   const isRegister = mode === "register";
   const [message, setMessage] = useState("");
+  const [isError, setIsError] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
+    setIsError(false);
+
+    const formData = new FormData(event.currentTarget);
+    const email = String(formData.get("email") ?? "");
+    const password = String(formData.get("password") ?? "");
 
     if (isRegister) {
-      const formData = new FormData(event.currentTarget);
       if (formData.get("password") !== formData.get("passwordConfirmation")) {
         setMessage("Les deux mots de passe ne correspondent pas.");
+        setIsError(true);
         return;
       }
     }
 
-    setMessage(
-      isRegister
-        ? "La création de compte n’est pas encore disponible. Aucune information n’a été envoyée."
-        : "La connexion n’est pas encore disponible. Aucune information n’a été envoyée.",
-    );
+    setIsSubmitting(true);
+
+    try {
+      if (isRegister) {
+        await registerDoctor({
+          email,
+          password,
+          name: `${String(formData.get("firstName") ?? "").trim()} ${String(formData.get("lastName") ?? "").trim()}`.trim(),
+          specialty: String(formData.get("specialty") ?? ""),
+          practiceCity: String(formData.get("practiceCity") ?? ""),
+          phone: String(formData.get("phone") ?? "").trim(),
+        });
+        event.currentTarget.reset();
+        setMessage("Votre compte a été créé. Vous pouvez maintenant vous connecter.");
+      } else {
+        const { accessToken } = await login({ email, password });
+        window.localStorage.setItem("radoko_access_token", accessToken);
+        setMessage("Connexion réussie. Votre session est maintenant active.");
+      }
+    } catch (error) {
+      setIsError(true);
+      setMessage(error instanceof Error ? error.message : "Une erreur est survenue. Veuillez réessayer.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   return (
@@ -135,10 +163,10 @@ export function DoctorAuthForm({ mode }: DoctorAuthFormProps) {
                 name="password"
                 type="password"
                 autoComplete={isRegister ? "new-password" : "current-password"}
-                minLength={8}
+                minLength={12}
                 required
               />
-              {isRegister ? <small>8 caractères minimum</small> : null}
+              {isRegister ? <small>12 caractères minimum</small> : null}
             </div>
 
             {isRegister ? (
@@ -149,16 +177,16 @@ export function DoctorAuthForm({ mode }: DoctorAuthFormProps) {
                   name="passwordConfirmation"
                   type="password"
                   autoComplete="new-password"
-                  minLength={8}
+                  minLength={12}
                   required
                 />
               </div>
             ) : null}
 
-            {message ? <p className="auth-form-message" role="status">{message}</p> : null}
+            {message ? <p className="auth-form-message" role={isError ? "alert" : "status"}>{message}</p> : null}
 
-            <button className="primary-button auth-submit" type="submit">
-              {isRegister ? "Créer mon espace médecin" : "Se connecter"}
+            <button className="primary-button auth-submit" type="submit" disabled={isSubmitting}>
+              {isSubmitting ? "En cours…" : isRegister ? "Créer mon espace médecin" : "Se connecter"}
             </button>
           </form>
 
