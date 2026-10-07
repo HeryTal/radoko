@@ -7,14 +7,122 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum UserRole {
+  PROFESSIONAL
+  ADMIN
+}
+
+enum VerificationStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum AppointmentStatus {
+  REQUESTED
+  CONFIRMED
+  DECLINED
+  CANCELLED
+  COMPLETED
+}
+
+enum NotificationStatus {
+  PENDING
+  SENDING
+  SENT
+}
+
 model User {
+  id                        String           @id @default(cuid())
+  email                     String           @unique
+  passwordHash              String
+  name                      String?
+  professionalType          String           @default("Médecin")
+  professionalTitle         String?
+  specialty                 String?
+  practiceCity              String?
+  practiceAddress           String?
+  phone                     String?
+  profilePhotoUrl           String?
+  spokenLanguages           String[]         @default([])
+  bio                       String?          @db.VarChar(1200)
+  experienceYears           Int?
+  services                  String[]         @default([])
+  consultationFee           Int?
+  consultationModes         String[]         @default([])
+  consultationDurationMinutes Int            @default(30)
+  isVerified                Boolean          @default(false)
+  role                      UserRole         @default(PROFESSIONAL)
+  verificationNote          String?          @db.VarChar(500)
+  verificationStatus        VerificationStatus @default(PENDING)
+  availabilities            Availability[]
+  appointments              Appointment[]
+  verificationDocuments     VerificationDocument[]
+  createdAt                 DateTime         @default(now())
+  updatedAt                 DateTime         @updatedAt
+}
+
+model Availability {
+  id        String   @id @default(cuid())
+  doctorId  String
+  weekday   Int
+  startTime String
+  endTime   String
+  doctor    User     @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([doctorId, weekday])
+}
+
+model Appointment {
+  id               String   @id @default(cuid())
+  doctorId         String
+  startsAt         DateTime
+  durationMinutes  Int
+  patientName      String
+  patientEmail     String
+  patientPhone     String
+  reason           String?
+  privacyConsentAt DateTime?
+  status           AppointmentStatus @default(REQUESTED)
+  cancellationTokenHash String?       @unique
+  cancellationExpiresAt DateTime?
+  patientPrivacyTokenHash String?     @unique
+  patientPrivacyTokenExpiresAt DateTime?
+  anonymizedAt     DateTime?
+  closedAt         DateTime?
+  doctor           User     @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([doctorId, startsAt])
+  @@index([status, startsAt])
+}
+
+model VerificationDocument {
   id           String   @id @default(cuid())
-  email        String   @unique
-  passwordHash String
-  name         String?
-  specialty    String?
-  practiceCity String?
-  phone        String?
+  doctorId     String
+  fileName     String
+  mimeType     String
+  content      Bytes
   createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  doctor       User     @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+
+  @@index([doctorId, createdAt])
+}
+
+model NotificationOutbox {
+  id             String             @id @default(cuid())
+  appointmentId  String?
+  recipient      String
+  subject        String
+  text           String             @db.Text
+  status         NotificationStatus @default(PENDING)
+  attempts       Int                @default(0)
+  nextAttemptAt DateTime            @default(now())
+  lastError      String?            @db.VarChar(1000)
+  createdAt      DateTime           @default(now())
+  sentAt         DateTime?
+
+  @@index([status, nextAttemptAt])
 }

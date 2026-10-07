@@ -1,6 +1,7 @@
 import { Transform } from 'class-transformer';
 import {
   IsEmail,
+  IsIn,
   IsOptional,
   IsString,
   MaxLength,
@@ -24,6 +25,10 @@ export class RegisterDto {
   @IsString()
   @MaxLength(100)
   name?: string;
+
+  @IsOptional()
+  @IsIn(['Médecin', 'Infirmier·ère', 'Sage-femme'])
+  professionalType?: string;
 
   @IsOptional()
   @IsString()

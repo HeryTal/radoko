@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import localFont from "next/font/local";
 import "./globals.css";
 import "./journey.css";
+import "./dashboard.css";
+import "./public-profile.css";
 
 const inter = localFont({
   src: "./fonts/inter-variable.ttf",

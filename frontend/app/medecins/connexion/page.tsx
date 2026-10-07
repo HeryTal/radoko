@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { DoctorAuthLayout } from "../../components/doctor-auth-layout";
 import { DoctorAuthForm } from "../../components/doctor-auth-form";
 
 export const metadata: Metadata = {
@@ -7,5 +8,5 @@ export const metadata: Metadata = {
 };
 
 export default function ConnexionMedecinPage() {
-  return <DoctorAuthForm mode="login" />;
+  return <DoctorAuthLayout><DoctorAuthForm mode="login" /></DoctorAuthLayout>;
 }

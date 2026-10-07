@@ -6,6 +6,7 @@ import { Anatomy } from "./anatomy";
 import { AnatomyJourney } from "./anatomy-journey";
 import { Icon } from "./icons";
 import Link from "next/link";
+import { doctorPhotoUrl, searchPublicDoctors, type PublicDoctorSummary } from "../lib/auth-api";
 
 const specialties = [
   { name: "Médecine générale", icon: "plus", detail: "Votre premier interlocuteur santé" },
@@ -14,6 +15,8 @@ const specialties = [
   { name: "Pédiatrie", icon: "child", detail: "Grandir en bonne santé" },
   { name: "Ophtalmologie", icon: "eye", detail: "Prendre soin de votre regard" },
   { name: "Chirurgie dentaire", icon: "tooth", detail: "Retrouver le plaisir de sourire" },
+  { name: "Infirmier·ère", icon: "plus", detail: "Des soins infirmiers près de chez vous" },
+  { name: "Sage-femme", icon: "child", detail: "Un accompagnement à chaque étape" },
 ] as const;
 const cities = ["Antananarivo", "Toamasina", "Antsirabe", "Mahajanga", "Fianarantsoa", "Toliara", "Antsiranana"];
 
@@ -22,15 +25,21 @@ export function Landing() {
   const [specialty, setSpecialty] = useState("");
   const [city, setCity] = useState("");
   const [dialog, setDialog] = useState<"search" | "privacy" | null>(null);
+  const [searchResults, setSearchResults] = useState<PublicDoctorSummary[]>([]);
+  const [searchError, setSearchError] = useState("");
+  const [isSearching, setIsSearching] = useState(false);
   const modal = useRef<HTMLDialogElement>(null);
   const search = useRef<HTMLFormElement>(null);
+  const searchRequest = useRef(0);
 
   useEffect(() => {
     if (dialog) {
       modal.current?.showModal();
       const previous = document.body.style.overflow;
       document.body.style.overflow = "hidden";
-      return () => { document.body.style.overflow = previous; };
+      return () => {
+        document.body.style.overflow = previous;
+      };
     }
     modal.current?.close();
   }, [dialog]);
@@ -43,7 +52,19 @@ export function Landing() {
 
   function submitSearch(event: FormEvent) {
     event.preventDefault();
+    const requestId = ++searchRequest.current;
+    setIsSearching(true);
+    setSearchError("");
     setDialog("search");
+    searchPublicDoctors(specialty, city).then((results) => {
+      if (requestId === searchRequest.current) setSearchResults(results);
+    }).catch((error: unknown) => {
+      if (requestId === searchRequest.current) {
+        setSearchError(error instanceof Error ? error.message : "La recherche est momentanément indisponible.");
+      }
+    }).finally(() => {
+      if (requestId === searchRequest.current) setIsSearching(false);
+    });
   }
 
   return (
@@ -66,9 +87,7 @@ export function Landing() {
       <main>
         <section className="hero" id="accueil" aria-labelledby="hero-heading">
           <div className="hero-grain" />
-          <div className="hero-art"><div className="orbital orbital-one" /><div className="orbital orbital-two" /><Anatomy />
-            <button className="anatomy-tag" onClick={() => selectSpecialty("Gastro-entérologie")}><span className="live-dot" /><span>LE CORPS, CET UNIVERS<small>Explorer la gastro-entérologie</small></span><Icon name="arrow" /></button>
-          </div>
+          <div className="hero-art"><div className="orbital orbital-one" /><div className="orbital orbital-two" /><Anatomy /></div>
           <div className="hero-content">
             <div className="eyebrow"><span className="live-dot" /> LA SANTÉ, PLUS PROCHE. <span className="country">MADAGASCAR</span></div>
             <h1 id="hero-heading">Un univers en vous.<br />Le bon médecin<br /><em>près de vous.</em></h1>
@@ -82,7 +101,7 @@ export function Landing() {
               <div className="search-field city-field"><Icon name="pin" /><div><label htmlFor="city">Où à Madagascar ?</label><select id="city" value={city} onChange={e => setCity(e.target.value)}><option value="">Toutes les villes</option>{cities.map(item => <option key={item}>{item}</option>)}</select></div></div>
               <button className="search-button" type="submit">Trouver un médecin <Icon name="arrow" /></button>
             </form>
-            <div className="search-footnote"><span><Icon name="shield" /> Un annuaire pensé pour la confiance</span><span>Sans intermédiaire. Sans prise de rendez-vous en ligne.</span></div>
+            <div className="search-footnote"><span><Icon name="shield" /> Un annuaire pensé pour la confiance</span><span>Consultez les profils et réservez un créneau disponible.</span></div>
           </div>
           <div className="hero-caption"><span className="caption-line" /> UNE EXPLORATION DU VIVANT <span>↓</span></div>
         </section>
@@ -101,8 +120,8 @@ export function Landing() {
           <div className="section-title-row"><h2 id="how-heading">Moins de recherches.<br /><em>Plus de confiance.</em></h2><p>Le chemin vers le bon médecin<br />ne devrait pas être compliqué.</p></div>
           <div className="steps">{[
             ["01", "Trouvez votre spécialiste", "Choisissez une spécialité et une ville. Votre recherche commence avec ce qui compte pour vous."],
-            ["02", "Faites connaissance", "Consultez sa fiche : parcours, adresse, horaires et coordonnées. Les profils seront vérifiés manuellement avant publication."],
-            ["03", "Prenez contact, simplement", "Appelez directement le cabinet pour échanger et organiser votre visite. Vous gardez le lien avec votre médecin."],
+            ["02", "Faites connaissance", "Consultez sa fiche : parcours, adresse, horaires et coordonnées. Le statut de vérification est clairement indiqué."],
+            ["03", "Choisissez votre rendez-vous", "Réservez un créneau disponible en ligne, ou contactez directement le professionnel si son agenda n’est pas ouvert."],
           ].map(([number, title, description]) => <article className="step" key={number}><span className="step-number">{number}<Icon name="arrow" /></span><h3>{title}</h3><p>{description}</p></article>)}</div>
           <div className="trust-strip"><Icon name="shield" /><div><strong>La confiance se construit avec soin.</strong><p>Une vérification humaine des profils. Une mise en avant payante clairement identifiée.</p></div><span>NOTRE ENGAGEMENT</span></div>
         </div></section>
@@ -119,7 +138,7 @@ export function Landing() {
         <button className="modal-close" aria-label="Fermer" onClick={() => setDialog(null)}><Icon name="close" /></button>
         <span className="eyebrow">RADOKO · EN PRÉPARATION</span>
         <h2 id="dialog-heading">{dialog === "search" ? "Votre recherche" : "Votre confidentialité."}</h2>
-        {dialog === "search" ? <><div className="search-summary"><span>{specialty || "Toutes les spécialités"}</span><span><Icon name="pin" /> {city || "Toutes les villes"}</span></div><div className="empty-state"><Icon name="search" /><h3>L’annuaire prend forme.</h3><p>Aucun profil n’est publié pour le moment. Les premières fiches seront disponibles après leur vérification par notre équipe.</p></div><button className="primary-button" onClick={() => setDialog(null)}>Modifier ma recherche <Icon name="arrow" /></button></> : <><p>Cette page de présentation n’utilise aucun formulaire d’inscription, paiement ou outil de mesure d’audience.</p><p>Vos choix de spécialité et de ville restent dans la page : ils ne sont ni enregistrés ni envoyés à un annuaire. Ils sont effacés lorsque vous rechargez la page.</p><p>Les informations concernant le traitement des données seront complétées avant l’ouverture du service.</p></>}
+        {dialog === "search" ? <><div className="search-summary"><span>{specialty || "Toutes les spécialités"}</span><span><Icon name="pin" /> {city || "Toutes les villes"}</span></div>{isSearching ? <div className="empty-state"><p>Recherche des professionnels…</p></div> : searchError ? <div className="empty-state" role="alert"><p>{searchError}</p></div> : searchResults.length ? <div className="directory-results">{searchResults.map((doctor) => <Link className="directory-result" href={`/medecins/${doctor.id}`} key={doctor.id} onClick={() => setDialog(null)}><span className={`directory-result-avatar${doctor.profilePhotoUrl ? " has-photo" : ""}`} style={doctor.profilePhotoUrl ? { backgroundImage: `url("${doctorPhotoUrl(doctor.profilePhotoUrl)}")` } : undefined}>{!doctor.profilePhotoUrl && (doctor.name?.charAt(0).toUpperCase() ?? "R")}</span><span className="directory-result-info"><strong>{doctor.professionalTitle ? `${doctor.professionalTitle} ` : ""}{doctor.name}</strong><small>{doctor.professionalType} · {doctor.specialty}</small><small>{doctor.practiceCity}{doctor.practiceAddress ? ` · ${doctor.practiceAddress}` : ""}</small></span><span className="directory-result-status">{doctor.isVerified ? "Vérifié" : "À vérifier"} <Icon name="arrow" /></span></Link>)}</div> : <div className="empty-state"><Icon name="search" /><h3>Aucun professionnel trouvé.</h3><p>Essayez une autre spécialité ou une autre ville. Vous pouvez aussi vous connecter à une fiche directement.</p></div>}<button className="primary-button" onClick={() => setDialog(null)}>Modifier ma recherche <Icon name="arrow" /></button></> : <><p>La recherche envoie la spécialité et la ville sélectionnées au service Radoko pour afficher les profils correspondants. Ces critères ne sont pas conservés dans le navigateur.</p><p>Lors d’une réservation, le nom, l’e-mail, le téléphone, le créneau et le motif facultatif sont transmis et enregistrés pour permettre au professionnel de gérer le rendez-vous.</p><p>Les coordonnées du patient sont visibles au professionnel associé au rendez-vous. Elles ne sont pas affichées sur la fiche publique. Les informations de confidentialité devront être complétées avant l’ouverture commerciale du service.</p></>}
       </dialog>
     </>
   );

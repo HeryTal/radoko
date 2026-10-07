@@ -2,9 +2,10 @@
 
 import { useState, type FormEvent } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { DoctorAuthIllustration } from "./doctor-auth-illustration";
 import { Icon } from "./icons";
-import { login, registerDoctor } from "../lib/auth-api";
+import { login, PROFESSIONAL_TYPES, registerDoctor } from "../lib/auth-api";
 
 type DoctorAuthFormProps = {
   mode: "register" | "login";
@@ -17,6 +18,8 @@ const specialties = [
   "Gastro-entérologie",
   "Ophtalmologie",
   "Pédiatrie",
+  "Soins infirmiers",
+  "Maïeutique",
   "Autre spécialité",
 ];
 
@@ -32,6 +35,7 @@ const cities = [
 
 export function DoctorAuthForm({ mode }: DoctorAuthFormProps) {
   const isRegister = mode === "register";
+  const router = useRouter();
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -57,10 +61,15 @@ export function DoctorAuthForm({ mode }: DoctorAuthFormProps) {
 
     try {
       if (isRegister) {
+        const professionalType =
+          PROFESSIONAL_TYPES.find(
+            (type) => type === String(formData.get("professionalType") ?? ""),
+          ) ?? "Médecin";
         await registerDoctor({
           email,
           password,
           name: `${String(formData.get("firstName") ?? "").trim()} ${String(formData.get("lastName") ?? "").trim()}`.trim(),
+          professionalType,
           specialty: String(formData.get("specialty") ?? ""),
           practiceCity: String(formData.get("practiceCity") ?? ""),
           phone: String(formData.get("phone") ?? "").trim(),
@@ -70,7 +79,7 @@ export function DoctorAuthForm({ mode }: DoctorAuthFormProps) {
       } else {
         const { accessToken } = await login({ email, password });
         window.localStorage.setItem("radoko_access_token", accessToken);
-        setMessage("Connexion réussie. Votre session est maintenant active.");
+        router.replace("/medecins/tableau-de-bord");
       }
     } catch (error) {
       setIsError(true);
@@ -114,6 +123,12 @@ export function DoctorAuthForm({ mode }: DoctorAuthFormProps) {
                   <div className="auth-field">
                     <label htmlFor="firstName">Prénom</label>
                     <input id="firstName" name="firstName" autoComplete="given-name" required />
+                  </div>
+                  <div className="auth-field">
+                    <label htmlFor="professionalType">Votre profession</label>
+                    <select id="professionalType" name="professionalType" defaultValue="Médecin" required>
+                      {PROFESSIONAL_TYPES.map((type) => <option key={type}>{type}</option>)}
+                    </select>
                   </div>
                   <div className="auth-field">
                     <label htmlFor="lastName">Nom</label>

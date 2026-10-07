@@ -84,6 +84,107 @@ Passwords must contain 12 to 128 characters. The API stores an Argon2id hash,
 normalizes e-mail addresses to lowercase, and returns the created user's public
 fields without the password hash.
 
+## Professional profiles and appointment booking
+
+Apply the profile, verification, and booking migrations with `npm run db:deploy`, then
+regenerate the Prisma client with `npm run prisma:generate`. Profiles include
+professional type, specialty, public practice/contact details, biography,
+languages, services, indicative fee, consultation modes, and weekly
+availability. E-mail and credentials are excluded from public profile responses.
+
+Authenticated endpoints:
+
+- `GET /auth/me` reads the complete private profile.
+- `PATCH /auth/me/profile` edits public profile fields.
+- `PATCH /auth/me/availability` replaces the weekly availability windows.
+- `GET /auth/me/appointments` lists upcoming and recent appointments with their status.
+- `PATCH /auth/me/appointments/:id/status` confirms, refuses, cancels, or completes a booking.
+- `PATCH /auth/me/appointments/:id/reschedule` moves a future booking to another valid slot.
+- `POST /auth/me/verification-document` accepts one private PDF/JPG/PNG credential (maximum 10 MiB).
+- `DELETE /auth/me` deletes a professional account and anonymizes patient bookings made with that account's e-mail.
+
+Public endpoints:
+
+- `GET /auth/public?specialty=...&city=...` searches approved professional profiles.
+- `GET /auth/public/:doctorId` reads an approved public profile.
+- `GET /auth/public/:doctorId/slots?date=YYYY-MM-DD` returns booked local times.
+- `POST /auth/public/:doctorId/appointments` reserves an open time. The request
+  contains `startsAt` (ISO 8601), `patientName`, `patientEmail`, `patientPhone`,
+  and an optional `reason`, plus required `privacyConsent: true`. Times use
+  Madagascar's UTC+03:00 timezone. The API serializes booking transactions per
+  professional and rejects overlapping active bookings.
+- `POST /auth/public/appointments/cancel` cancels a future request using the
+  single-use token emailed to the patient.
+- `POST /auth/public/appointments/erase-data` immediately anonymizes appointments
+  associated with the e-mail address proven by the secure privacy link.
+
+  Profile photos are uploaded as multipart field `photo` to the authenticated
+  `POST /auth/me/photo` endpoint. JPG, PNG, and WebP images up to 5 MiB are
+  accepted. Files are stored in `UPLOAD_DIR` (defaults to `uploads/` under the
+  backend working directory) and served from `/uploads/`; configure this directory
+  on persistent storage for deployments where the application filesystem is
+  ephemeral.
+
+## Verification, notifications, and retention
+
+New professional profiles remain private until an administrator approves a
+submitted credential. Create an account normally, then promote that exact
+account from a secured operator shell:
+
+```powershell
+npm run admin:promote -- admin@example.com
+```
+
+Do not expose administrator credentials or run this command from a public
+endpoint. Sign in with that account and open `/admin` to review the private
+documents, approve, or refuse with a reason. Documents are removed immediately
+after a decision.
+
+Configure SMTP before production startup. The backend requires all SMTP
+settings when `NODE_ENV=production`; in development without SMTP, messages are
+queued but remain undelivered and a warning is logged.
+
+```dotenv
+SMTP_HOST=smtp.example.com
+SMTP_PORT=587
+SMTP_SECURE=false
+SMTP_USER=radoko@example.com
+SMTP_PASS=your-secret-from-a-secret-manager
+SMTP_FROM=Radoko <radoko@example.com>
+```
+
+The outbox retries transient delivery errors with backoff, up to 12 attempts.
+Sent mail is discarded after 30 days; permanently failed or older unsent mail
+is removed. Appointment contact details are anonymized 12 months after their
+closed date. The background worker also closes appointments that have elapsed.
+
+## Production operations
+
+- `GET /health` performs a database query and returns HTTP 503 when PostgreSQL
+  is unavailable.
+- Global request throttling defaults to 100 requests per IP per minute; login
+  is limited to 5/minute, registration to 3/minute, and public booking to
+  10/minute. Set `TRUST_PROXY_HOPS` to the exact trusted reverse-proxy hop
+  count (0–5), not to a client-controlled forwarded-header value.
+- Configure `UPLOAD_DIR` on a persistent volume. Back up profile-photo storage
+  as well as PostgreSQL; the application intentionally does not claim cloud
+  object-storage durability.
+- Create a compressed PostgreSQL backup from an operator machine with `pg_dump`
+  installed and `DATABASE_URL` loaded from the secret store:
+
+  ```powershell
+  .\scripts\backup-postgres.ps1
+  ```
+
+  Store the output on encrypted storage with access restrictions and an
+  off-site copy. This script does not encrypt backups itself. Define and test
+  a restore runbook with `pg_restore` before production; periodically restore
+  into an isolated database and verify profiles, schedules, appointments, and
+  uploaded media.
+- The privacy information at `/confidentialite` is explicitly a draft. Add the
+  real operator identity, contact details, applicable legal bases, and any
+  required Malagasy legal notices before opening the service to the public.
+
 ## Log in
 
 Send the same e-mail and password to receive a signed JWT access token valid

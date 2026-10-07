@@ -60,11 +60,6 @@ h1 { font-size: clamp(46px, 4.7vw, 68px); line-height: 1.09; letter-spacing: -.0
 .anatomy-label { font-family: var(--sans); }
 .orbital { position: absolute; border: 1px solid #0876b910; border-radius: 50%; left: 50%; top: 46%; transform: translate(-50%, -50%); width: 450px; height: 450px; }
 .orbital-two { width: 580px; height: 580px; }
-.anatomy-tag { position: absolute; left: 51%; bottom: 29px; display: flex; align-items: center; gap: 11px; white-space: nowrap; text-align: left; border: 1px solid #dbe8ef; border-radius: 5px; background: #fffffff2; padding: 15px 17px; box-shadow: 0 12px 30px #14558010; }
-.anatomy-tag > span:nth-child(2) { font-size: 10px; letter-spacing: 1.6px; color: #0876b9; }
-.anatomy-tag small { display: block; font-size: 10px; letter-spacing: 0; color: #587084; margin-top: 6px; }
-.anatomy-tag svg { width: 16px; margin-left: 5px; }
-.anatomy-tag:hover { border-color: var(--accent); }
 
 /* Search */
 .hero-bottom { position: relative; z-index: 3; width: 83.4%; margin: 69px auto 0; }
@@ -193,7 +188,6 @@ h2 { font-size: clamp(35px, 3.6vw, 52px); line-height: 1.17; letter-spacing: -.0
   .specialty-card p { font-size: 14px; }
   .section-title-row > p { font-size: 14px; }
   .doctor-section { gap: 50px; }
-  .anatomy-tag { left: 40%; }
 }
 @media (max-width: 760px) {
   :root { --header-height: 80px; }
@@ -214,7 +208,6 @@ h2 { font-size: clamp(35px, 3.6vw, 52px); line-height: 1.17; letter-spacing: -.0
   .hero-description { font-size: 14px; line-height: 1.8; position: relative; }
   .explore-link { margin-top: 20px; font-size: 10px; position: relative; }
   .hero-art { top: 167px; right: -118px; width: 450px; height: 550px; opacity: .48; pointer-events: none; }
-  .anatomy-tag { display: none; }
   .hero-bottom { margin-top: 125px; width: 88%; }
   .search-heading { font-size: 10px; letter-spacing: 1px; }
   .search-heading > span:last-child { display: none; }
