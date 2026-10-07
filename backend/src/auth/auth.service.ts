@@ -18,7 +18,14 @@ export class AuthService {
     private readonly jwtService: JwtService,
   ) {}
 
-  async register({ email, password, name }: RegisterDto) {
+  async register({
+    email,
+    password,
+    name,
+    specialty,
+    practiceCity,
+    phone,
+  }: RegisterDto) {
     const passwordHash = await argon2.hash(password, {
       type: argon2.argon2id,
     });
@@ -29,11 +36,17 @@ export class AuthService {
           email: email.trim().toLowerCase(),
           passwordHash,
           ...(name === undefined ? {} : { name }),
+          ...(specialty === undefined ? {} : { specialty }),
+          ...(practiceCity === undefined ? {} : { practiceCity }),
+          ...(phone === undefined ? {} : { phone }),
         },
         select: {
           id: true,
           email: true,
           name: true,
+          specialty: true,
+          practiceCity: true,
+          phone: true,
           createdAt: true,
         },
       });
@@ -75,6 +88,9 @@ export class AuthService {
         id: true,
         email: true,
         name: true,
+        specialty: true,
+        practiceCity: true,
+        phone: true,
         createdAt: true,
       },
     });

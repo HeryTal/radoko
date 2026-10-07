@@ -24,4 +24,19 @@ export class RegisterDto {
   @IsString()
   @MaxLength(100)
   name?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  specialty?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  practiceCity?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
+  phone?: string;
 }
