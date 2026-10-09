@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { DoctorAvailabilityEditor } from "./doctor-availability-editor";
 import { DoctorProfileEditor } from "./doctor-profile-editor";
+import { useConfirmation } from "./confirmation-dialog";
 import type { Appointment, AuthUser } from "../lib/auth-api";
 import {
   AuthApiError,
@@ -48,6 +49,8 @@ function profileCompletion(profile: AuthUser) {
 
 export function DoctorDashboard() {
   const router = useRouter();
+  const { confirm, confirmationDialog } = useConfirmation();
+  const [activeSection, setActiveSection] = useState("accueil");
   const [profile, setProfile] = useState<AuthUser | null>(null);
   const [accessToken, setAccessToken] = useState("");
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -119,6 +122,29 @@ export function DoctorDashboard() {
     };
   }, [router]);
 
+  useEffect(() => {
+    if (isLoading || !profile) return;
+    let frame = 0;
+    const updateSection = () => {
+      let current = "accueil";
+      for (const section of ["profil", "disponibilites", "rendez-vous"]) {
+        const element = document.getElementById(section);
+        if (element && element.getBoundingClientRect().top <= 180) current = section;
+      }
+      setActiveSection(current);
+    };
+    const onScroll = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(updateSection);
+    };
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onScroll);
+    };
+  }, [isLoading, profile]);
+
   function handleLogout() {
     window.localStorage.removeItem("radoko_access_token");
     router.replace("/medecins/connexion");
@@ -150,7 +176,19 @@ export function DoctorDashboard() {
       setCurrentTime(currentTimestamp());
     } catch (actionError) {
       setAppointmentActionError(actionError instanceof Error ? actionError.message : "Impossible de mettre à jour le rendez-vous.");
+      throw actionError;
     }
+  }
+
+  function confirmAppointment(appointment: Appointment, status: "CONFIRMED" | "DECLINED" | "CANCELLED" | "COMPLETED") {
+    const labels = { CONFIRMED: "Confirmer le rendez-vous", DECLINED: "Refuser le rendez-vous", CANCELLED: "Annuler le rendez-vous", COMPLETED: "Marquer comme terminé" };
+    confirm({
+      title: `${labels[status]} ?`,
+      description: `Rendez-vous de ${appointment.patientName}, le ${new Intl.DateTimeFormat("fr-FR", { timeZone: "Africa/Nairobi", dateStyle: "long", timeStyle: "short" }).format(new Date(appointment.startsAt))} (heure de Madagascar). ${status === "CANCELLED" || status === "DECLINED" ? "Le créneau sera libéré." : "Le statut de ce rendez-vous sera mis à jour."}`,
+      label: labels[status],
+      destructive: status === "CANCELLED" || status === "DECLINED",
+      onConfirm: () => handleAppointmentStatus(appointment.id, status),
+    });
   }
 
   async function handleReschedule(event: FormEvent<HTMLFormElement>, id: string) {
@@ -158,15 +196,18 @@ export function DoctorDashboard() {
     const form = event.currentTarget;
     const value = new FormData(form).get("newStart");
     if (typeof value !== "string" || !value) return;
-    setAppointmentActionError("");
-    try {
-      await rescheduleAppointment(accessToken, id, new Date(`${value}:00+03:00`).toISOString());
-      setAppointments(await getDoctorAppointments(accessToken));
-      setCurrentTime(currentTimestamp());
-      form.reset();
-    } catch (actionError) {
-      setAppointmentActionError(actionError instanceof Error ? actionError.message : "Impossible de reprogrammer le rendez-vous.");
-    }
+    confirm({
+      title: "Déplacer ce rendez-vous ?",
+      description: `Le nouveau créneau sera le ${new Intl.DateTimeFormat("fr-FR", { timeZone: "Africa/Nairobi", dateStyle: "long", timeStyle: "short" }).format(new Date(`${value}:00+03:00`))}, heure de Madagascar. L’ancien créneau sera libéré.`,
+      label: "Reprogrammer",
+      onConfirm: async () => {
+        setAppointmentActionError("");
+        await rescheduleAppointment(accessToken, id, new Date(`${value}:00+03:00`).toISOString());
+        setAppointments(await getDoctorAppointments(accessToken));
+        setCurrentTime(currentTimestamp());
+        form.reset();
+      },
+    });
   }
 
   if (isLoading || !profile) {
@@ -202,25 +243,26 @@ export function DoctorDashboard() {
 
   return (
     <div className="doctor-dashboard" id="accueil">
+      {confirmationDialog}
       <aside className="dashboard-sidebar">
         <Link className="dashboard-brand" href="/" aria-label="Radoko, accueil">
           <Image src="/brand/radoko-logo.svg" alt="Radoko" width={262} height={52} priority />
         </Link>
         <p className="dashboard-workspace-label">ESPACE PROFESSIONNEL</p>
         <nav className="dashboard-nav" aria-label="Navigation de l’espace médecin">
-          <a className="dashboard-nav-link is-active" href="#accueil" aria-current="page">
+          <a className={`dashboard-nav-link${activeSection === "accueil" ? " is-active" : ""}`} href="#accueil" aria-current={activeSection === "accueil" ? "location" : undefined} onClick={() => setActiveSection("accueil")}>
             <span className="dashboard-nav-icon" aria-hidden="true">⌂</span>
             Vue d’ensemble
           </a>
-          <a className="dashboard-nav-link" href="#profil">
+          <a className={`dashboard-nav-link${activeSection === "profil" ? " is-active" : ""}`} href="#profil" aria-current={activeSection === "profil" ? "location" : undefined} onClick={() => setActiveSection("profil")}>
             <span className="dashboard-nav-icon" aria-hidden="true">◉</span>
             Mon profil
           </a>
-          <a className="dashboard-nav-link" href="#disponibilites">
+          <a className={`dashboard-nav-link${activeSection === "disponibilites" ? " is-active" : ""}`} href="#disponibilites" aria-current={activeSection === "disponibilites" ? "location" : undefined} onClick={() => setActiveSection("disponibilites")}>
             <span className="dashboard-nav-icon" aria-hidden="true">▦</span>
             Disponibilités
           </a>
-          <a className="dashboard-nav-link" href="#rendez-vous">
+          <a className={`dashboard-nav-link${activeSection === "rendez-vous" ? " is-active" : ""}`} href="#rendez-vous" aria-current={activeSection === "rendez-vous" ? "location" : undefined} onClick={() => setActiveSection("rendez-vous")}>
             <span className="dashboard-nav-icon" aria-hidden="true">◷</span>
             Rendez-vous
           </a>
@@ -241,9 +283,9 @@ export function DoctorDashboard() {
           <div>
             <span className="dashboard-breadcrumb">Espace médecin</span>
             <span className="dashboard-breadcrumb-separator" aria-hidden="true">/</span>
-            <span className="dashboard-breadcrumb-current">Vue d’ensemble</span>
+            <span className="dashboard-breadcrumb-current">{{ accueil: "Vue d’ensemble", profil: "Mon profil", disponibilites: "Disponibilités", "rendez-vous": "Rendez-vous" }[activeSection]}</span>
           </div>
-          <button className="dashboard-logout" type="button" onClick={handleLogout}>
+          <button className="dashboard-logout" type="button" onClick={() => confirm({ title: "Vous déconnecter ?", description: "Vous pourrez retrouver votre espace en vous reconnectant. Pensez à enregistrer vos modifications avant de partir.", label: "Se déconnecter", onConfirm: handleLogout })}>
             <span aria-hidden="true">↗</span> Déconnexion
           </button>
         </header>
@@ -398,18 +440,18 @@ export function DoctorDashboard() {
                         <span>{appointment.durationMinutes} min · {appointment.status === "REQUESTED" ? "En attente" : appointment.status === "CONFIRMED" ? "Confirmé" : appointment.status === "DECLINED" ? "Refusé" : appointment.status === "CANCELLED" ? "Annulé" : "Terminé"}</span>
                         <div className="dashboard-appointment-actions">
                           {appointment.status === "REQUESTED" && <>
-                            <button type="button" onClick={() => void handleAppointmentStatus(appointment.id, "CONFIRMED")}>Confirmer</button>
-                            <button type="button" onClick={() => void handleAppointmentStatus(appointment.id, "DECLINED")}>Refuser</button>
+                            <button type="button" onClick={() => confirmAppointment(appointment, "CONFIRMED")}>Confirmer</button>
+                            <button type="button" className="is-danger-action" onClick={() => confirmAppointment(appointment, "DECLINED")}>Refuser</button>
                           </>}
                           {(appointment.status === "REQUESTED" || appointment.status === "CONFIRMED") && new Date(appointment.startsAt) > new Date() && <>
-                            <button type="button" onClick={() => void handleAppointmentStatus(appointment.id, "CANCELLED")}>Annuler</button>
+                            <button type="button" className="is-danger-action" onClick={() => confirmAppointment(appointment, "CANCELLED")}>Annuler</button>
                             <form onSubmit={(event) => void handleReschedule(event, appointment.id)}>
                               <label>Nouvelle date et heure (Madagascar)<input name="newStart" type="datetime-local" required /></label>
                               <button type="submit">Reprogrammer</button>
                             </form>
                           </>}
                           {appointment.status === "CONFIRMED" && currentTime > 0 && new Date(appointment.startsAt).getTime() + appointment.durationMinutes * 60_000 <= currentTime &&
-                            <button type="button" onClick={() => void handleAppointmentStatus(appointment.id, "COMPLETED")}>Marquer terminé</button>}
+                            <button type="button" onClick={() => confirmAppointment(appointment, "COMPLETED")}>Marquer terminé</button>}
                         </div>
                       </article>
                     ))}
@@ -421,8 +463,7 @@ export function DoctorDashboard() {
           <footer className="dashboard-footer">
             <span>© 2026 Radoko · Pensé pour Madagascar</span>
             <span>Vos informations sont protégées par votre connexion sécurisée.</span>
-            <button className="dashboard-delete-account" type="button" onClick={async () => {
-              if (!window.confirm("Supprimer définitivement votre compte ? Cette action est irréversible.")) return;
+            <button className="dashboard-delete-account" type="button" onClick={() => confirm({ title: "Supprimer votre compte ?", description: "Votre compte sera définitivement supprimé. Cette action est irréversible : vous ne pourrez plus accéder à votre espace avec ces identifiants.", label: "Supprimer mon compte", destructive: true, onConfirm: async () => {
               setAccountDeleteError("");
               try {
                 await deleteMyAccount(accessToken);
@@ -430,8 +471,9 @@ export function DoctorDashboard() {
                 router.replace("/");
               } catch (deleteError) {
                 setAccountDeleteError(deleteError instanceof Error ? deleteError.message : "La suppression du compte a échoué.");
+                throw deleteError;
               }
-            }}>Supprimer mon compte</button>
+            } })}>Supprimer mon compte</button>
           </footer>
           {accountDeleteError && <p className="dashboard-form-message is-error" role="alert">{accountDeleteError}</p>}
         </div>

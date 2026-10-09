@@ -1,6 +1,7 @@
 "use client";
 
 import { useRef, useState, type ChangeEvent, type FormEvent } from "react";
+import { useConfirmation } from "./confirmation-dialog";
 import type { AuthUser } from "../lib/auth-api";
 import {
   doctorPhotoUrl,
@@ -33,6 +34,7 @@ export function DoctorProfileEditor({
   accessToken: string;
   onProfileUpdate: (profile: AuthUser) => void;
 }) {
+  const { confirm, confirmationDialog } = useConfirmation();
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -87,6 +89,7 @@ export function DoctorProfileEditor({
     } catch (error) {
       setPhotoError(true);
       setPhotoMessage(error instanceof Error ? error.message : "Impossible de supprimer cette photo.");
+      throw error;
     } finally {
       setIsUploadingPhoto(false);
     }
@@ -138,6 +141,7 @@ export function DoctorProfileEditor({
 
   return (
     <form className="dashboard-editor-form" onSubmit={handleSubmit}>
+      {confirmationDialog}
       <div className="dashboard-editor-grid">
         <label className="dashboard-editor-field">
           <span>Nom complet</span>
@@ -210,7 +214,7 @@ export function DoctorProfileEditor({
                   <button
                     className="dashboard-photo-remove"
                     type="button"
-                    onClick={handlePhotoRemoval}
+                    onClick={() => confirm({ title: "Supprimer votre photo ?", description: "Votre photo sera retirée de votre fiche publique. Vous pourrez en ajouter une nouvelle à tout moment.", label: "Supprimer la photo", destructive: true, onConfirm: handlePhotoRemoval })}
                     disabled={isUploadingPhoto}
                   >
                     Supprimer

@@ -31,6 +31,40 @@ export function Landing() {
   const modal = useRef<HTMLDialogElement>(null);
   const search = useRef<HTMLFormElement>(null);
   const searchRequest = useRef(0);
+  const page = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const root = page.current;
+    if (!root || !("IntersectionObserver" in window)) return;
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const elements = root.querySelectorAll<HTMLElement>(".section-topline, .section-title-row, .specialty-card, .step, .trust-strip, .doctor-art, .doctor-content");
+    let observer: IntersectionObserver | undefined;
+    const configure = () => {
+      observer?.disconnect();
+      elements.forEach((element) => element.classList.remove("landing-reveal", "is-visible"));
+      if (preference.matches) return;
+      observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          entry.target.classList.add("is-visible");
+          observer?.unobserve(entry.target);
+        });
+      }, { threshold: 0.08 });
+      elements.forEach((element) => {
+        // Only defer offscreen content; the initial viewport stays immediately readable.
+        if (element.getBoundingClientRect().top < window.innerHeight) return;
+        element.classList.add("landing-reveal");
+        observer?.observe(element);
+      });
+    };
+    configure();
+    preference.addEventListener("change", configure);
+    return () => {
+      observer?.disconnect();
+      preference.removeEventListener("change", configure);
+      elements.forEach((element) => element.classList.remove("landing-reveal", "is-visible"));
+    };
+  }, []);
 
   useEffect(() => {
     if (dialog) {
@@ -68,7 +102,7 @@ export function Landing() {
   }
 
   return (
-    <>
+    <div className="landing-page" ref={page}>
       <a className="skip-link" href="#recherche">Aller à la recherche</a>
       <header className="site-header">
         <Logo />
@@ -90,7 +124,7 @@ export function Landing() {
           <div className="hero-art"><div className="orbital orbital-one" /><div className="orbital orbital-two" /><Anatomy /></div>
           <div className="hero-content">
             <div className="eyebrow"><span className="live-dot" /> LA SANTÉ, PLUS PROCHE. <span className="country">MADAGASCAR</span></div>
-            <h1 id="hero-heading">Un univers en vous.<br />Le bon médecin<br /><em>près de vous.</em></h1>
+            <h1 id="hero-heading">Un univers en vous.<br />Le bon médecin<br /><em>près de vous.<svg className="hero-underline" viewBox="0 0 330 22" preserveAspectRatio="none" aria-hidden="true"><path d="M4 14C80 3 214 3 326 12M36 20C136 10 226 11 292 17" pathLength="1" /></svg></em></h1>
             <p className="hero-description">Votre corps est extraordinaire.<br />Trouvons ensemble ceux qui en prennent soin.</p>
             <a className="explore-link" href="#exploration">Commencer l’exploration <span>↓</span></a>
           </div>
@@ -140,6 +174,6 @@ export function Landing() {
         <h2 id="dialog-heading">{dialog === "search" ? "Votre recherche" : "Votre confidentialité."}</h2>
         {dialog === "search" ? <><div className="search-summary"><span>{specialty || "Toutes les spécialités"}</span><span><Icon name="pin" /> {city || "Toutes les villes"}</span></div>{isSearching ? <div className="empty-state"><p>Recherche des professionnels…</p></div> : searchError ? <div className="empty-state" role="alert"><p>{searchError}</p></div> : searchResults.length ? <div className="directory-results">{searchResults.map((doctor) => <Link className="directory-result" href={`/medecins/${doctor.id}`} key={doctor.id} onClick={() => setDialog(null)}><span className={`directory-result-avatar${doctor.profilePhotoUrl ? " has-photo" : ""}`} style={doctor.profilePhotoUrl ? { backgroundImage: `url("${doctorPhotoUrl(doctor.profilePhotoUrl)}")` } : undefined}>{!doctor.profilePhotoUrl && (doctor.name?.charAt(0).toUpperCase() ?? "R")}</span><span className="directory-result-info"><strong>{doctor.professionalTitle ? `${doctor.professionalTitle} ` : ""}{doctor.name}</strong><small>{doctor.professionalType} · {doctor.specialty}</small><small>{doctor.practiceCity}{doctor.practiceAddress ? ` · ${doctor.practiceAddress}` : ""}</small></span><span className="directory-result-status">{doctor.isVerified ? "Vérifié" : "À vérifier"} <Icon name="arrow" /></span></Link>)}</div> : <div className="empty-state"><Icon name="search" /><h3>Aucun professionnel trouvé.</h3><p>Essayez une autre spécialité ou une autre ville. Vous pouvez aussi vous connecter à une fiche directement.</p></div>}<button className="primary-button" onClick={() => setDialog(null)}>Modifier ma recherche <Icon name="arrow" /></button></> : <><p>La recherche envoie la spécialité et la ville sélectionnées au service Radoko pour afficher les profils correspondants. Ces critères ne sont pas conservés dans le navigateur.</p><p>Lors d’une réservation, le nom, l’e-mail, le téléphone, le créneau et le motif facultatif sont transmis et enregistrés pour permettre au professionnel de gérer le rendez-vous.</p><p>Les coordonnées du patient sont visibles au professionnel associé au rendez-vous. Elles ne sont pas affichées sur la fiche publique. Les informations de confidentialité devront être complétées avant l’ouverture commerciale du service.</p></>}
       </dialog>
-    </>
+    </div>
   );
 }

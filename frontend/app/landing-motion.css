@@ -1,0 +1,91 @@
+/* Editorial type and tactile motion inspired by the supplied Ember & Oak reference.
+   Scoped to the landing page so professional screens keep their existing typography. */
+.landing-page {
+  --landing-display: "Cooper Black", "Cooper Std", Cooper, "Rockwell Nova", Rockwell, "URW Bookman", "Bookman Old Style", Georgia, serif;
+  --heading-font: var(--landing-display);
+  --sans: "Avenir Next", Avenir, var(--font-inter), "Segoe UI", sans-serif;
+  --motion-soft: cubic-bezier(.22, .8, .26, 1);
+  --motion-spring: cubic-bezier(.34, 1.56, .64, 1);
+  font-family: var(--sans);
+}
+.landing-page h1, .landing-page h2 { font-weight: 700; letter-spacing: -.04em; }
+.landing-page .hero h1 { font-size: clamp(40px, 4.8vw, 70px); line-height: 1.06; }
+.landing-page .hero h1 em { position: relative; display: inline-block; padding-bottom: .12em; }
+.hero-underline { position: absolute; left: -1%; bottom: -.04em; width: 102%; height: .24em; overflow: visible; pointer-events: none; }
+.hero-underline path { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-linecap: round; opacity: .45; }
+.landing-page .hero-description { font-size: clamp(15px, 1.2vw, 18px); line-height: 1.8; }
+.landing-page .eyebrow { font-weight: 650; letter-spacing: .18em; }
+.landing-page .section-title-row h2 { font-size: clamp(34px, 3.7vw, 54px); line-height: 1.12; }
+.landing-page .doctor-content h2 { font-size: clamp(32px, 3.2vw, 46px); line-height: 1.14; }
+.landing-page .section-title-row > p, .landing-page .doctor-content > p { font-size: 15px; line-height: 1.85; }
+.landing-page .specialty-card h3 { font-family: var(--landing-display); font-weight: 700; font-size: 23px; line-height: 1.2; letter-spacing: -.035em; overflow-wrap: anywhere; }
+.landing-page .step h3 { font-family: var(--landing-display); font-size: 21px; font-weight: 700; line-height: 1.25; }
+.landing-page .step-number { font-weight: 700; font-variant-numeric: lining-nums; }
+.landing-page .search-field label { font-size: 11px; }
+.landing-page .explore-link { font-size: 12px; font-weight: 600; }
+.landing-page .doctor-content ul { font-size: 12px; line-height: 1.6; }
+.landing-page .trust-strip strong { font-size: 14px; font-weight: 650; }
+.landing-page .trust-strip p { font-size: 12px; }
+
+/* A restrained raised edge makes the existing calls to action feel pressable. */
+.landing-page :is(.search-button, .primary-button) {
+  box-shadow: 0 3px 0 #055487, 0 8px 18px -10px #173b5640, inset 0 1px 0 #ffffff30;
+  transition: transform .2s var(--motion-soft), box-shadow .2s var(--motion-soft), background-color .2s;
+}
+.landing-page :is(.search-button, .primary-button):active:not(:disabled) { transform: translateY(3px); box-shadow: 0 0 0 #055487, inset 0 2px 4px #173b5620; }
+.landing-page :is(.primary-button, .search-button, .nav-cta) svg { transition: transform .3s var(--motion-spring); }
+.landing-page .specialty-card { border-radius: 9px; transition: transform .4s var(--motion-soft), box-shadow .4s var(--motion-soft), background-color .3s, border-color .3s; }
+.landing-page .specialty-card-top svg { transform-origin: center; transition: transform .4s var(--motion-spring); }
+.landing-page .card-arrow { transition: transform .3s var(--motion-soft); }
+.landing-page .explore-link span, .landing-page .back-top span { transition: transform .3s var(--motion-spring); }
+.landing-page .specialty-card:focus-visible { background: #f2f9fd; border-color: #90c6e2; }
+
+@media (hover: hover) and (pointer: fine) {
+  .landing-page :is(.search-button, .primary-button):hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 5px 0 #055487, 0 14px 24px -12px #173b5650; }
+  .landing-page :is(.search-button, .primary-button):active:not(:disabled) { transform: translateY(3px); box-shadow: 0 0 0 #055487; }
+  .landing-page :is(.primary-button, .search-button, .nav-cta):hover svg { transform: translateX(3px); }
+  .landing-page .specialty-card:hover { transform: translateY(-6px); box-shadow: 0 18px 32px -22px #0876b955; }
+  .landing-page .specialty-card:hover .specialty-card-top svg { transform: translateY(-2px) rotate(-5deg) scale(1.08); }
+  .landing-page .specialty-card:hover .card-arrow { transform: translateX(4px); }
+  .landing-page .explore-link:hover span { transform: translateY(4px); }
+  .landing-page .back-top:hover span { transform: translateY(-4px); }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .landing-page .hero-content > * { animation: landing-rise .85s var(--motion-soft) both; }
+  .landing-page .hero-content > :nth-child(2) { animation-delay: .1s; }
+  .landing-page .hero-content > :nth-child(3) { animation-delay: .2s; }
+  .landing-page .hero-content > :nth-child(4) { animation-delay: .3s; }
+  .landing-page .hero-bottom { animation: landing-rise .9s .35s var(--motion-soft) both; }
+  .hero-underline path { stroke-dasharray: 1; stroke-dashoffset: 1; animation: landing-ink 1.1s .65s var(--motion-soft) forwards; }
+  .landing-page .landing-reveal { opacity: 0; translate: 0 22px; transition: opacity .75s var(--motion-soft), translate .75s var(--motion-soft); }
+  .landing-page .landing-reveal.is-visible, .landing-page .landing-reveal:focus-within { opacity: 1; translate: 0 0; }
+  .landing-page .landing-reveal:focus-within { transition-delay: 0s; }
+  .landing-page .specialty-card.landing-reveal { transition: opacity .7s var(--motion-soft), translate .7s var(--motion-soft), transform .35s var(--motion-soft), box-shadow .35s, border-color .3s, background-color .3s; }
+  .landing-page .specialty-card.landing-reveal:nth-child(3n + 2), .landing-page .step.landing-reveal:nth-child(2) { transition-delay: .08s, .08s, 0s, 0s, 0s, 0s; }
+  .landing-page .specialty-card.landing-reveal:nth-child(3n + 3), .landing-page .step.landing-reveal:nth-child(3) { transition-delay: .16s, .16s, 0s, 0s, 0s, 0s; }
+}
+@keyframes landing-rise { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes landing-ink { to { stroke-dashoffset: 0; } }
+@media (max-width: 1100px) and (min-width: 761px) {
+  .landing-page .hero h1 { font-size: 51px; }
+}
+@media (max-width: 760px) {
+  .landing-page .hero h1 { font-size: clamp(32px, 6.8vw, 49px); }
+  .landing-page .specialty-card h3 { font-size: clamp(18px, 3vw, 22px); }
+  .landing-page .section-title-row h2 { font-size: clamp(32px, 6vw, 42px); }
+  .landing-page .hero-description { font-size: 15px; }
+  .landing-page .specialty-card.landing-reveal:nth-child(n) { transition-delay: 0s; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .landing-page .landing-reveal { opacity: 1; translate: none; }
+  .landing-page :is(.specialty-card, .primary-button, .search-button):hover,
+  .landing-page :is(.specialty-card, .primary-button, .search-button):active,
+  .landing-page .specialty-card-top svg, .landing-page .card-arrow,
+  .landing-page .explore-link span, .landing-page .back-top span,
+  .landing-page :is(.primary-button, .search-button, .nav-cta) svg { transform: none; }
+  .hero-underline path { stroke-dashoffset: 0; }
+}
+@media print {
+  .landing-page .landing-reveal { opacity: 1; translate: none; }
+}

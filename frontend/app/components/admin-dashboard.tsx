@@ -4,6 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { useConfirmation } from "./confirmation-dialog";
 import {
   downloadVerificationDocument,
   getDoctorProfile,
@@ -14,6 +15,7 @@ import {
 
 export function AdminDashboard() {
   const router = useRouter();
+  const { confirm, confirmationDialog } = useConfirmation();
   const [token, setToken] = useState("");
   const [professionals, setProfessionals] = useState<PendingProfessional[]>([]);
   const [error, setError] = useState("");
@@ -56,6 +58,7 @@ export function AdminDashboard() {
       setMessage(decision === "approve" ? "Profil validé. La notification e-mail est en file d’attente ; sa livraison dépend de la configuration SMTP." : "Profil refusé. Les justificatifs ont été supprimés et une notification e-mail a été mise en file d’attente.");
     } catch (decisionError) {
       setError(decisionError instanceof Error ? decisionError.message : "Impossible d’enregistrer la décision.");
+      throw decisionError;
     }
   }
 
@@ -80,10 +83,11 @@ export function AdminDashboard() {
 
   return (
     <main className="dashboard-main admin-dashboard">
+      {confirmationDialog}
       <header className="dashboard-topbar">
         <Link href="/" className="dashboard-brand"><Image src="/brand/radoko-logo.svg" alt="Radoko" width={180} height={36} /></Link>
         <span className="dashboard-breadcrumb-current">Administration</span>
-        <button className="dashboard-logout" type="button" onClick={logout}>Déconnexion</button>
+        <button className="dashboard-logout" type="button" onClick={() => confirm({ title: "Quitter l’administration ?", description: "Votre session sera fermée. Les motifs de refus non envoyés ne seront pas conservés.", label: "Se déconnecter", onConfirm: logout })}>Déconnexion</button>
       </header>
       <div className="dashboard-content">
         <section className="dashboard-welcome">
@@ -122,8 +126,8 @@ export function AdminDashboard() {
                   </div>
                   <label>Motif si refus<textarea value={reasons[professional.id] ?? ""} onChange={(event) => setReasons((current) => ({ ...current, [professional.id]: event.target.value }))} minLength={5} maxLength={500} /></label>
                   <div className="admin-decision-actions">
-                    <button type="button" disabled={!professional.verificationDocuments.length} onClick={() => void decide(professional.id, "approve")}>Approuver</button>
-                    <button type="button" disabled={(reasons[professional.id]?.trim().length ?? 0) < 5} onClick={() => void decide(professional.id, "reject")}>Refuser</button>
+                    <button type="button" disabled={!professional.verificationDocuments.length} onClick={() => confirm({ title: "Valider ce professionnel ?", description: `Le profil de ${professional.name || professional.email} sera validé. Les justificatifs seront supprimés après cette décision.`, label: "Approuver le profil", onConfirm: () => decide(professional.id, "approve") })}>Approuver</button>
+                    <button type="button" className="is-danger-action" disabled={(reasons[professional.id]?.trim().length ?? 0) < 5} onClick={() => confirm({ title: "Refuser ce professionnel ?", description: `Le profil de ${professional.name || professional.email} sera refusé et ses justificatifs supprimés. Motif : ${reasons[professional.id]}`, label: "Refuser le profil", destructive: true, onConfirm: () => decide(professional.id, "reject") })}>Refuser</button>
                   </div>
                 </article>
               ))}

@@ -1,0 +1,133 @@
+/* Finishing touches: retain the existing blue/teal palette and page layouts. */
+textarea { font: inherit; }
+textarea:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 4px; }
+button:disabled { cursor: not-allowed; }
+button, input, select, textarea { transition: border-color .18s ease, background-color .18s ease, box-shadow .18s ease; }
+input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):focus,
+select:focus, textarea:focus { border-color: #81b9c5; box-shadow: 0 0 0 3px #0876b90b; }
+.main-nav a, .nav-login, .auth-home-link, .public-doctor-back { text-underline-offset: 5px; }
+.main-nav a:hover, .nav-login:hover, .auth-home-link:hover, .public-doctor-back:hover { text-decoration: underline; }
+.nav-cta, .auth-submit, .public-booking-submit { transition: background-color .18s, box-shadow .18s; }
+.nav-cta:hover, .auth-submit:hover:not(:disabled), .public-booking-submit:hover:not(:disabled) { box-shadow: 0 4px 14px #173b5612; }
+.auth-field label { font-size: 12px; }
+.auth-field small, .auth-form-switch { font-size: 12px; line-height: 1.65; }
+.auth-field input, .auth-field select { border-radius: 7px; }
+.auth-form-message { border-radius: 0 8px 8px 0; }
+.dashboard-summary-card, .dashboard-panel { border-radius: 12px; box-shadow: 0 3px 16px #183b5104; }
+.dashboard-panel-heading { flex-wrap: wrap; }
+.dashboard-workspace-label, .dashboard-section-kicker { color: #647e8d; font-size: 10px; }
+.dashboard-card-label { font-size: 12px; }
+.dashboard-summary-card > p, .dashboard-profile-identity span,
+.dashboard-next-step > p, .dashboard-sidebar-note p,
+.dashboard-management-panel .dashboard-editor-intro { color: #617889; font-size: 12px; line-height: 1.75; }
+.dashboard-summary-value { font-size: 17px; white-space: normal; overflow-wrap: anywhere; }
+.dashboard-completion-number { font-size: 30px; }
+.dashboard-progress { height: 6px; margin: 10px 0; }
+.dashboard-profile-identity strong { font-size: 14px; }
+.dashboard-profile-details dt { font-size: 11px; color: #647e8d; }
+.dashboard-profile-details dd { font-size: 13px; white-space: normal; overflow-wrap: anywhere; line-height: 1.6; }
+.dashboard-profile-status { font-size: 11px; padding: 7px 11px; }
+.dashboard-text-link { font-size: 12px; min-height: 44px; }
+.dashboard-text-link:hover { text-decoration: underline; text-underline-offset: 4px; }
+.dashboard-logout { min-height: 40px; padding: 8px 12px; border: 1px solid #e4ecee; border-radius: 7px; }
+.dashboard-logout:hover { background: #f0f7f6; border-color: #b8d7d2; }
+.dashboard-editor-field > span, .dashboard-editor-modes legend,
+.dashboard-verification-form label, .dashboard-photo-actions > p { font-size: 12px; }
+.dashboard-editor-field input, .dashboard-editor-field select, .dashboard-editor-field textarea { min-height: 44px; font-size: 13px; border-radius: 7px; padding: 11px 12px; }
+.dashboard-editor-modes label { min-height: 40px; font-size: 12px; border-radius: 7px; }
+.dashboard-editor-modes label:has(input:checked) { background: #eff8f5; border-color: #99c9be; color: #236e63; }
+.dashboard-button, .dashboard-save-button { min-height: 44px; font-size: 12px; border-radius: 7px; font-weight: 600; }
+.dashboard-button:hover:not(:disabled) { background: #0e746e; }
+.dashboard-photo-choose, .dashboard-photo-remove { min-height: 40px; font-size: 12px; }
+.dashboard-form-message { margin: 12px 0; padding: 12px 15px; border: 1px solid #cfe6de; border-radius: 8px; background: #f1f9f5; font-size: 13px; }
+.dashboard-form-message.is-error { background: #fff6f5; border-color: #efd5d2; color: #a13d38; }
+.dashboard-weekday { padding: 10px 12px; border-radius: 8px; }
+.dashboard-weekday-toggle, .dashboard-closed-label { font-size: 12px; }
+.dashboard-time-fields input { min-height: 40px; font-size: 12px; }
+.dashboard-remove-window { width: 36px; height: 36px; }
+.dashboard-add-window { min-height: 36px; font-size: 12px; }
+.dashboard-appointment { padding: 20px 0; gap: 12px; }
+.dashboard-appointment strong { font-size: 14px; }
+.dashboard-appointment time, .dashboard-appointment div span,
+.dashboard-appointment div small, .dashboard-appointment > span { font-size: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.dashboard-appointment-actions button, .admin-decision-actions button, .admin-documents button { min-height: 40px; font-size: 12px; border-radius: 7px; }
+.dashboard-appointment-actions label, .admin-professional-card label { font-size: 12px; }
+.dashboard-appointment-actions form { flex-wrap: wrap; }
+.dashboard-appointment-actions input { min-height: 40px; }
+.dashboard-appointment-actions button.is-danger-action, .admin-decision-actions button.is-danger-action { color: #a34e4e; border-color: #ecd6d3; background: #fffafa; }
+.dashboard-appointment-actions button.is-danger-action:hover, .admin-decision-actions button.is-danger-action:hover { background: #fff0ed; }
+.dashboard-footer { align-items: center; flex-wrap: wrap; font-size: 11px; color: #647e8d; }
+.dashboard-delete-account { min-height: 40px; text-underline-offset: 4px; }
+.dashboard-welcome h1 { overflow-wrap: anywhere; }
+.dashboard-welcome > div:first-child { min-width: 0; }
+.dashboard-welcome p { font-size: 13px; }
+.admin-dashboard .dashboard-topbar .dashboard-brand { margin: 0; }
+.admin-dashboard .dashboard-content > .dashboard-panel { margin-top: 22px; }
+.admin-professionals { margin-top: 20px; }
+.admin-professional-card { padding: 22px; border-radius: 10px; gap: 12px; }
+.admin-professional-card > p { font-size: 13px; overflow-wrap: anywhere; }
+.admin-documents { font-size: 12px; }
+.admin-documents button { overflow-wrap: anywhere; text-align: left; }
+.admin-decision-actions { flex-wrap: wrap; }
+.public-doctor-loading { padding: 32px 20px; gap: 20px; }
+.public-doctor-loading > p { max-width: 540px; line-height: 1.8; }
+.public-doctor-loading > h1 { font-size: clamp(28px, 5vw, 40px); }
+.public-doctor-loading > a { text-decoration: underline; text-underline-offset: 4px; }
+
+/* Shared confirmation, with native focus containment and a quiet backdrop. */
+.confirmation-dialog { width: min(460px, calc(100% - 32px)); max-height: calc(100dvh - 40px); margin: auto; padding: 0; overflow-y: auto; border: 1px solid #dfe9e9; border-radius: 18px; background: #fff; color: #183b51; box-shadow: 0 24px 90px #183b5133; text-align: left; }
+.confirmation-dialog[open] { animation: confirmation-enter .18s ease-out; }
+.confirmation-dialog::backdrop { background: #173b5680; backdrop-filter: blur(5px); }
+.confirmation-content { padding: 30px; }
+.confirmation-symbol { display: grid; width: 48px; height: 48px; margin-bottom: 22px; place-items: center; border: 1px solid #dcece7; border-radius: 14px; background: #edf7f4; color: #168b83; }
+.confirmation-symbol svg { width: 24px; height: 24px; }
+.confirmation-eyebrow { margin: 0 0 10px; font-size: 9px; letter-spacing: 1.4px; font-weight: 650; color: #617889; }
+.confirmation-dialog h2 { margin: 0; font: 650 24px/1.25 var(--heading-font); letter-spacing: -.035em; }
+.confirmation-description { margin: 14px 0 0; color: #617889; font-size: 14px; line-height: 1.75; overflow-wrap: anywhere; }
+.confirmation-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 28px; padding-top: 22px; border-top: 1px solid #e9eff0; }
+.confirmation-actions button { display: inline-flex; flex: 1 1 auto; min-height: 44px; justify-content: center; align-items: center; gap: 8px; padding: 11px 16px; border: 1px solid transparent; border-radius: 8px; font-size: 13px; font-weight: 600; }
+.confirmation-cancel { background: #fff; color: #456173; border-color: #dce6e9 !important; }
+.confirmation-cancel:hover:not(:disabled) { background: #f5f8f8; }
+.confirmation-submit { background: #168b83; color: #fff; }
+.confirmation-submit:hover:not(:disabled) { background: #0e746e; }
+.confirmation-dialog.is-destructive .confirmation-symbol { background: #fff3f1; border-color: #f1dcd8; color: #ac4942; }
+.confirmation-dialog.is-destructive .confirmation-submit { background: #ac4942; }
+.confirmation-dialog.is-destructive .confirmation-submit:hover:not(:disabled) { background: #903b35; }
+.confirmation-actions button:disabled { opacity: .65; cursor: wait; }
+.confirmation-error { margin-top: 16px; padding: 12px; border-radius: 8px; background: #fff3f1; color: #a13d38; font-size: 13px; line-height: 1.6; }
+.confirmation-spinner { width: 14px; height: 14px; border: 2px solid #ffffff55; border-top-color: #fff; border-radius: 50%; animation: confirmation-spin .7s linear infinite; }
+.confirmation-live { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+@keyframes confirmation-spin { to { transform: rotate(360deg); } }
+@keyframes confirmation-enter { from { opacity: 0; transform: translateY(8px) scale(.98); } to { opacity: 1; transform: none; } }
+@media (max-width: 720px) {
+  .dashboard-nav-link { min-height: 44px; font-size: 12px; }
+  .dashboard-photo-control { align-items: flex-start; }
+  .dashboard-topbar { gap: 10px; }
+  .dashboard-panel-heading { align-items: flex-start; }
+  .dashboard-panel-heading .dashboard-duration-note { max-width: none; text-align: left; }
+  .dashboard-duration-note { font-size: 12px; }
+  .dashboard-welcome-mark { display: none; }
+  .auth-field input, .auth-field select, .dashboard-editor-field input, .dashboard-editor-field select,
+  .dashboard-editor-field textarea, .public-booking-form input, .public-booking-form select,
+  .public-booking-form textarea { font-size: 16px; }
+}
+@media (max-width: 520px) {
+  .dashboard-content { padding-right: 16px; padding-left: 16px; }
+  .dashboard-panel { padding: 20px 16px; }
+  .dashboard-weekday { grid-template-columns: 1fr; gap: 10px; }
+  .dashboard-closed-label { justify-self: start; }
+  .dashboard-time-fields { flex-wrap: wrap; gap: 8px; }
+  .dashboard-time-fields input { width: 92px; font-size: 16px; }
+  .dashboard-photo-control { flex-wrap: wrap; }
+  .dashboard-appointment-actions form, .dashboard-appointment-actions label { width: 100%; }
+  .dashboard-appointment-actions input { width: 100%; min-width: 0; font-size: 16px; }
+  .dashboard-appointment-actions button { min-height: 44px; }
+  .dashboard-footer { align-items: flex-start; }
+  .confirmation-content { padding: 24px; }
+  .confirmation-actions { flex-direction: column-reverse; }
+  .admin-dashboard .dashboard-topbar { flex-wrap: wrap; height: auto; min-height: 70px; padding-top: 12px; padding-bottom: 12px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
