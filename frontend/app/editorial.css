@@ -1,0 +1,96 @@
+/* Shared editorial identity. Keep data, labels and controls in the reading font. */
+:root {
+  --editorial-display: "Cooper Black", "Cooper Std", Cooper, "Rockwell Nova", Rockwell, "URW Bookman", "Bookman Old Style", Georgia, serif;
+  --heading-font: var(--editorial-display);
+  --sans: "Avenir Next", Avenir, var(--font-inter), "Segoe UI", sans-serif;
+  --editorial-soft: cubic-bezier(.22, .8, .26, 1);
+  --editorial-spring: cubic-bezier(.34, 1.56, .64, 1);
+}
+:is(.doctor-auth-page, .doctor-dashboard, .admin-dashboard, .public-doctor-page, .public-doctor-loading, .privacy-page) :is(h1, h2, h3),
+.confirmation-dialog h2 {
+  font-family: var(--editorial-display);
+  font-weight: 700;
+  letter-spacing: -.035em;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.doctor-auth-visual-caption > span { font-weight: 700; line-height: 1.2; }
+.dashboard-panel-heading h2, .dashboard-next-step h2 { font-size: 21px; }
+.admin-professional-card h3 { font-size: 19px; }
+.public-doctor-section h2 { font-size: 20px; }
+.public-booking-card > h2 { font-size: 24px; }
+.public-slot-picker h3, .public-booking-form h3 { font-size: 16px; }
+.public-doctor-identity > div { min-width: 0; }
+.privacy-page h2 { font-size: 24px; }
+.privacy-page p { font-size: 14px; }
+.dashboard-completion-number, .dashboard-summary-value, .dashboard-avatar,
+.dashboard-photo-preview, .public-doctor-avatar, .public-calendar, .public-time-slots { font-family: var(--sans); }
+.dashboard-completion-number, .public-calendar, .public-time-slots { font-variant-numeric: tabular-nums; }
+.public-doctor-section > p, .public-doctor-details dd, .public-doctor-details dd a,
+.public-doctor-hours li, .public-booking-form > p, .public-no-slots { font-size: 13px; line-height: 1.75; }
+.public-doctor-details dt, .public-doctor-location, .public-doctor-tags li,
+.public-booking-form label, .public-booking-duration, .public-slot-picker > p { font-size: 12px; }
+.public-booking-form .public-consent, .public-booking-privacy { font-size: 11px; line-height: 1.75; }
+.public-booking-submit { min-height: 44px; padding: 12px 16px; font-size: 12px; }
+.public-time-slots button { min-height: 40px; font-size: 12px; }
+.public-calendar-heading button { width: 36px; height: 36px; }
+.public-calendar-grid > button { font-size: 12px; }
+.public-booking-form input:not([type="checkbox"]), .public-booking-form textarea { min-height: 44px; font-size: 13px; border-radius: 7px; }
+
+/* Tactile controls retain each screen's original accent (blue or teal). */
+:is(.auth-submit, .dashboard-button, .dashboard-save-button, .public-booking-submit, .confirmation-submit) {
+  --button-edge: #0a665f;
+  box-shadow: 0 3px 0 var(--button-edge), 0 8px 18px -12px #183b5140, inset 0 1px 0 #ffffff30;
+  transition: transform .2s var(--editorial-soft), box-shadow .2s var(--editorial-soft), background-color .2s;
+}
+.auth-submit { --button-edge: #055487; }
+.confirmation-dialog.is-destructive .confirmation-submit { --button-edge: #80342f; }
+:is(.auth-submit, .dashboard-button, .dashboard-save-button, .public-booking-submit, .confirmation-submit):active:not(:disabled) {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 var(--button-edge), inset 0 2px 4px #183b5120;
+}
+:is(.auth-submit, .dashboard-button, .dashboard-save-button, .public-booking-submit, .confirmation-submit):disabled { box-shadow: none; }
+.dashboard-nav-icon, .dashboard-text-link > span, .auth-home-link svg { transition: transform .3s var(--editorial-spring); }
+.dashboard-summary-card, .admin-professional-card { transition: border-color .25s, box-shadow .3s var(--editorial-soft); }
+.public-time-slots button { transition: transform .2s var(--editorial-spring), background-color .2s, border-color .2s; }
+@media (hover: hover) and (pointer: fine) {
+  :is(.auth-submit, .dashboard-button, .dashboard-save-button, .public-booking-submit, .confirmation-submit):hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 0 var(--button-edge), 0 14px 22px -14px #183b5150;
+  }
+  :is(.auth-submit, .dashboard-button, .dashboard-save-button, .public-booking-submit, .confirmation-submit):active:not(:disabled) { transform: translateY(3px); box-shadow: 0 0 0 var(--button-edge); }
+  .dashboard-nav-link:hover .dashboard-nav-icon { transform: translateY(-1px) scale(1.08); }
+  .dashboard-text-link:hover > span { transform: translateX(3px); }
+  .auth-home-link:hover svg { transform: rotate(180deg) translateX(3px); }
+  .dashboard-summary-card:hover, .admin-professional-card:hover { border-color: #b8d7d2; box-shadow: 0 12px 26px -22px #183b5140; }
+  .public-time-slots button:hover:not(:disabled) { transform: translateY(-2px); }
+  .public-time-slots button:active:not(:disabled) { transform: translateY(1px); }
+}
+
+/* Short, staggered entrances. No permanent transform on sticky layout parents. */
+@media (prefers-reduced-motion: no-preference) {
+  .doctor-auth-visual, .doctor-auth-content, .dashboard-welcome,
+  .dashboard-summary-card, .dashboard-lower-grid > .dashboard-panel,
+  .admin-professional-card, .public-doctor-card, .public-booking-card,
+  .public-doctor-loading > :not(dialog), .privacy-page > :is(h1, h2, p) {
+    animation: editorial-arrive .65s var(--editorial-soft) backwards;
+  }
+  .doctor-auth-content, .public-booking-card, .dashboard-summary-card:nth-child(1) { animation-delay: .08s; }
+  .dashboard-summary-card:nth-child(2), .dashboard-lower-grid > .dashboard-panel:nth-child(1), .public-doctor-loading > p { animation-delay: .14s; }
+  .dashboard-summary-card:nth-child(3), .dashboard-lower-grid > .dashboard-panel:nth-child(2) { animation-delay: .2s; }
+  .admin-professional-card:nth-child(2), .privacy-page > p { animation-delay: .08s; }
+  .admin-professional-card:nth-child(3) { animation-delay: .14s; }
+  .public-booking-message, .dashboard-form-message, .auth-form-message { animation: editorial-arrive .3s var(--editorial-soft) backwards; }
+  .confirmation-dialog[open] { animation: editorial-dialog .25s var(--editorial-soft); }
+}
+@keyframes editorial-arrive { from { opacity: 0; translate: 0 14px; } to { opacity: 1; translate: 0 0; } }
+@keyframes editorial-dialog { from { opacity: 0; transform: translateY(10px) scale(.98); } to { opacity: 1; transform: none; } }
+@media (max-width: 720px) {
+  .dashboard-panel-heading h2, .dashboard-next-step h2 { font-size: 20px; }
+  .public-booking-form input:not([type="checkbox"]), .public-booking-form textarea { font-size: 16px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  :is(.auth-submit, .dashboard-button, .dashboard-save-button, .public-booking-submit, .confirmation-submit, .public-time-slots button):is(:hover, :active),
+  .dashboard-nav-link:hover .dashboard-nav-icon, .dashboard-text-link:hover > span { transform: none; }
+  .auth-home-link:hover svg { transform: rotate(180deg); }
+}

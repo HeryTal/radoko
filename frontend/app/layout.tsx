@@ -5,6 +5,7 @@ import "./journey.css";
 import "./dashboard.css";
 import "./public-profile.css";
 import "./refinements.css";
+import "./editorial.css";
 
 const inter = localFont({
   src: "./fonts/inter-variable.ttf",

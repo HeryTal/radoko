@@ -1,7 +1,7 @@
 /* Editorial type and tactile motion inspired by the supplied Ember & Oak reference.
    Scoped to the landing page so professional screens keep their existing typography. */
 .landing-page {
-  --landing-display: "Cooper Black", "Cooper Std", Cooper, "Rockwell Nova", Rockwell, "URW Bookman", "Bookman Old Style", Georgia, serif;
+  --landing-display: var(--editorial-display);
   --heading-font: var(--landing-display);
   --sans: "Avenir Next", Avenir, var(--font-inter), "Segoe UI", sans-serif;
   --motion-soft: cubic-bezier(.22, .8, .26, 1);
