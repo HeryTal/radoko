@@ -255,12 +255,21 @@ export function DoctorDashboard() {
               <h1>Bienvenue{profile.name ? `, ${profile.name}` : ""}.</h1>
               <p>Retrouvez ici les informations associées à votre compte médecin Radoko.</p>
             </div>
-            <div className="dashboard-welcome-mark" aria-hidden="true">
-              <span>R</span>
-              <i />
-              <i />
-              <i />
-            </div>
+            {profile.profilePhotoUrl ? (
+              <div
+                className="dashboard-welcome-mark dashboard-welcome-mark-photo"
+                role="img"
+                aria-label={`Photo de ${profile.name ?? "profil médecin"}`}
+                style={{ backgroundImage: `url("${doctorPhotoUrl(profile.profilePhotoUrl)}")` }}
+              />
+            ) : (
+              <div className="dashboard-welcome-mark" aria-hidden="true">
+                <span>R</span>
+                <i />
+                <i />
+                <i />
+              </div>
+            )}
           </section>
 
           {!profile.isVerified && <section className="dashboard-panel dashboard-verification-panel">

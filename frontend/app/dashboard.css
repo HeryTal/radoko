@@ -178,6 +178,7 @@
   background: #ffffffa8;
   color: #168b83;
 }
+.dashboard-welcome-mark-photo { background-position: center; background-size: cover; }
 .dashboard-welcome-mark > span { font-family: var(--heading-font); font-size: 32px; font-weight: 750; }
 .dashboard-welcome-mark i {
   position: absolute;

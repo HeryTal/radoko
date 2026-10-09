@@ -145,13 +145,19 @@ settings when `NODE_ENV=production`; in development without SMTP, messages are
 queued but remain undelivered and a warning is logged.
 
 ```dotenv
-SMTP_HOST=smtp.example.com
+SMTP_HOST=smtp.resend.com
 SMTP_PORT=587
 SMTP_SECURE=false
-SMTP_USER=radoko@example.com
-SMTP_PASS=your-secret-from-a-secret-manager
-SMTP_FROM=Radoko <radoko@example.com>
+SMTP_USER=resend
+SMTP_PASS=re_your_resend_api_key
+SMTP_FROM=Radoko <onboarding@resend.dev>
 ```
+
+Without a verified domain, Resend's shared test sender can only be used for
+Resend's test destinations, such as `delivered@resend.dev`; those messages do
+not reach a real inbox. Once a sending domain is verified, change `SMTP_FROM`
+to an address on that domain to send to real users. The API key is a secret:
+keep it in `backend/.env` or a secret manager, never in source control.
 
 The outbox retries transient delivery errors with backoff, up to 12 attempts.
 Sent mail is discarded after 30 days; permanently failed or older unsent mail
