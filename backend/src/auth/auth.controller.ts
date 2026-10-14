@@ -28,6 +28,8 @@ import { UpdateDoctorProfileDto } from './dto/update-doctor-profile.dto.js';
 import { CancelAppointmentDto } from './dto/cancel-appointment.dto.js';
 import { UpdateAppointmentStatusDto } from './dto/update-appointment-status.dto.js';
 import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto.js';
+import { RequestPasswordResetDto } from './dto/request-password-reset.dto.js';
+import { ResetPasswordDto } from './dto/reset-password.dto.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import type { AuthenticatedRequest } from './interfaces/authenticated-request.interface.js';
 
@@ -138,6 +140,20 @@ export class AuthController {
   @Throttle({ default: { limit: 5, ttl: 60_000 } })
   login(@Body() loginDto: LoginDto) {
     return this.authService.login(loginDto);
+  }
+
+  @Post('password-reset/request')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @Throttle({ default: { limit: 3, ttl: 60 * 60_000 } })
+  requestPasswordReset(@Body() input: RequestPasswordResetDto) {
+    return this.authService.requestPasswordReset(input.email);
+  }
+
+  @Post('password-reset/confirm')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Throttle({ default: { limit: 5, ttl: 60 * 60_000 } })
+  async resetPassword(@Body() input: ResetPasswordDto) {
+    await this.authService.resetPassword(input.token, input.password);
   }
 
   @Get('me')

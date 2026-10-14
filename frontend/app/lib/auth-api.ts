@@ -128,6 +128,14 @@ export function login(input: { email: string; password: string }) {
   return request<LoginResponse>("/auth/login", input);
 }
 
+export function requestPasswordReset(email: string) {
+  return request<{ accepted: true }>("/auth/password-reset/request", { email });
+}
+
+export function resetPassword(token: string, password: string) {
+  return request<undefined>("/auth/password-reset/confirm", { token, password });
+}
+
 export async function getDoctorProfile(accessToken: string) {
   return authenticatedRequest<AuthUser>("/auth/me", accessToken);
 }

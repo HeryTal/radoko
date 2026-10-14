@@ -209,6 +209,15 @@ curl http://localhost:3000/auth/me \
   -H "Authorization: Bearer YOUR_ACCESS_TOKEN"
 ```
 
+## Password reset
+
+`POST /auth/password-reset/request` accepts an e-mail address and always returns
+`202` to avoid revealing whether an account exists. When the address belongs to
+an account, a single-use link valid for 30 minutes is added to the e-mail
+outbox. `POST /auth/password-reset/confirm` accepts the token and a new
+12-character minimum password. Apply the `20261014210000_add_password_reset_tokens`
+migration before deploying this feature.
+
 ## Compile and run the project
 
 ```bash

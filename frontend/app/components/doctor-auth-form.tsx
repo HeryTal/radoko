@@ -211,6 +211,7 @@ export function DoctorAuthForm({ mode }: DoctorAuthFormProps) {
             <Link href={isRegister ? "/medecins/connexion" : "/medecins/inscription"}>
               {isRegister ? "Se connecter" : "Créer un compte"} <Icon name="arrow" />
             </Link>
+            {!isRegister ? <Link href="/medecins/mot-de-passe-oublie">Mot de passe oublié ?</Link> : null}
           </p>
         </div>
       </section>

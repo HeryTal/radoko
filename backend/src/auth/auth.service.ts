@@ -257,6 +257,56 @@ export class AuthService {
     };
   }
 
+  async requestPasswordReset(email: string) {
+    // This response is deliberately identical whether or not the address exists.
+    // It prevents the endpoint from becoming an account-enumeration oracle.
+    const user = await this.prisma.user.findUnique({
+      where: { email: email.trim().toLowerCase() },
+      select: { id: true, email: true },
+    });
+    if (!user) return { accepted: true };
+
+    const token = randomBytes(32).toString('base64url');
+    const expiresAt = new Date(Date.now() + 30 * 60_000);
+    await this.prisma.$transaction(async (transaction) => {
+      await transaction.user.update({
+        where: { id: user.id },
+        data: {
+          passwordResetTokenHash: this.hashCancellationToken(token),
+          passwordResetExpiresAt: expiresAt,
+        },
+      });
+      const frontendUrl = (process.env.FRONTEND_URL ?? 'http://localhost:3001').split(',')[0].trim();
+      const resetUrl = `${frontendUrl}/medecins/reinitialiser?token=${encodeURIComponent(token)}`;
+      await this.notifications.enqueue(
+        user.email,
+        'Réinitialisation de votre mot de passe Radoko',
+        `Une réinitialisation de votre mot de passe a été demandée. Utilisez ce lien dans les 30 minutes : ${resetUrl}\n\nSi vous n’êtes pas à l’origine de cette demande, vous pouvez ignorer cet e-mail.`,
+        undefined,
+        transaction,
+      );
+    });
+    return { accepted: true };
+  }
+
+  async resetPassword(token: string, password: string) {
+    const now = new Date();
+    const updated = await this.prisma.user.updateMany({
+      where: {
+        passwordResetTokenHash: this.hashCancellationToken(token),
+        passwordResetExpiresAt: { gt: now },
+      },
+      data: {
+        passwordHash: await argon2.hash(password, { type: argon2.argon2id }),
+        passwordResetTokenHash: null,
+        passwordResetExpiresAt: null,
+      },
+    });
+    if (!updated.count) {
+      throw new BadRequestException('Ce lien de réinitialisation est invalide ou expiré.');
+    }
+  }
+
   async getProfile(userId: string) {
     const user = await this.prisma.user.findUnique({
       where: { id: userId },
