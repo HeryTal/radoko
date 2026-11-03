@@ -1,4 +1,4 @@
-type IconName = "arrow" | "search" | "pin" | "shield" | "plus" | "heart" | "digestive" | "eye" | "child" | "tooth" | "menu" | "close";
+type IconName = "arrow" | "search" | "pin" | "shield" | "plus" | "heart" | "digestive" | "eye" | "eye-off" | "child" | "tooth" | "menu" | "close";
 const paths: Record<IconName, React.ReactNode> = {
   arrow: <path d="M5 12h14M13 6l6 6-6 6" />,
   search: <><circle cx="10.5" cy="10.5" r="6.5" /><path d="m16 16 5 5" /></>,
@@ -8,6 +8,7 @@ const paths: Record<IconName, React.ReactNode> = {
   heart: <><path d="M12 21 3.7 12.7C-2 7 6 0 12 6c6-6 14 1 8.3 6.7L12 21Z" /><path d="M3 12h5l2-4 3 8 2-4h6" /></>,
   digestive: <path d="M10 2v6c0 3-4 2-4 6a5 5 0 0 0 5 5h4a6 6 0 0 0 6-6V9c0-5-6-6-7-2-1 3-1-2-1-5M6 18c-4 0-4 4-1 4" />,
   eye: <><path d="M2 12s4-7 10-7 10 7-4 7-10 7S2 12 2 12Z" /><circle cx="12" cy="12" r="3" /></>,
+  "eye-off": <><path d="m3 3 18 18" /><path d="M10.6 5.1A11.8 11.8 0 0 1 12 5c6 0 10 7 10 7a20 20 0 0 1-3.2 3.8M6.2 6.2C3.6 8 2 12 2 12s4 7 10 7a10.8 10.8 0 0 0 3.4-.6" /><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" /></>,
   child: <><circle cx="12" cy="5" r="3" /><path d="m5 10 7 3 7-3M12 13v4m-5 5 5-5 5 5" /></>,
   tooth: <path d="M12 5C6-1 1 5 4 12c2 4 1 9 4 9 2 0 1-7 4-7s2 7 4 7c3 0 2-5 4-9 3-7-2-13-8-7Z" />,
   menu: <path d="M4 7h16M4 12h16M4 17h16" />,

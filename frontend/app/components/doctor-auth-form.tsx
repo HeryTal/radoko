@@ -39,13 +39,16 @@ export function DoctorAuthForm({ mode }: DoctorAuthFormProps) {
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showPasswordConfirmation, setShowPasswordConfirmation] = useState(false);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setMessage("");
     setIsError(false);
 
-    const formData = new FormData(event.currentTarget);
+    const form = event.currentTarget;
+    const formData = new FormData(form);
     const email = String(formData.get("email") ?? "");
     const password = String(formData.get("password") ?? "");
 
@@ -74,7 +77,7 @@ export function DoctorAuthForm({ mode }: DoctorAuthFormProps) {
           practiceCity: String(formData.get("practiceCity") ?? ""),
           phone: String(formData.get("phone") ?? "").trim(),
         });
-        event.currentTarget.reset();
+        form.reset();
         setMessage("Votre compte a été créé. Vous pouvez maintenant vous connecter.");
       } else {
         const { accessToken } = await login({ email, password });
@@ -173,28 +176,50 @@ export function DoctorAuthForm({ mode }: DoctorAuthFormProps) {
 
             <div className="auth-field">
               <label htmlFor="password">Mot de passe</label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete={isRegister ? "new-password" : "current-password"}
-                minLength={12}
-                required
-              />
+              <div className="password-input-wrap">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? "text" : "password"}
+                  autoComplete={isRegister ? "new-password" : "current-password"}
+                  minLength={12}
+                  required
+                />
+                <button
+                  className="password-toggle"
+                  type="button"
+                  aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"}
+                  aria-pressed={showPassword}
+                  onClick={() => setShowPassword((visible) => !visible)}
+                >
+                  <Icon name={showPassword ? "eye-off" : "eye"} />
+                </button>
+              </div>
               {isRegister ? <small>12 caractères minimum</small> : null}
             </div>
 
             {isRegister ? (
               <div className="auth-field">
                 <label htmlFor="passwordConfirmation">Confirmer le mot de passe</label>
-                <input
-                  id="passwordConfirmation"
-                  name="passwordConfirmation"
-                  type="password"
-                  autoComplete="new-password"
-                  minLength={12}
-                  required
-                />
+                <div className="password-input-wrap">
+                  <input
+                    id="passwordConfirmation"
+                    name="passwordConfirmation"
+                    type={showPasswordConfirmation ? "text" : "password"}
+                    autoComplete="new-password"
+                    minLength={12}
+                    required
+                  />
+                  <button
+                    className="password-toggle"
+                    type="button"
+                    aria-label={showPasswordConfirmation ? "Masquer la confirmation" : "Afficher la confirmation"}
+                    aria-pressed={showPasswordConfirmation}
+                    onClick={() => setShowPasswordConfirmation((visible) => !visible)}
+                  >
+                    <Icon name={showPasswordConfirmation ? "eye-off" : "eye"} />
+                  </button>
+                </div>
               </div>
             ) : null}
 

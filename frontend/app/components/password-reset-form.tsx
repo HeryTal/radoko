@@ -4,6 +4,7 @@ import Link from "next/link";
 import { FormEvent, useState } from "react";
 import { requestPasswordReset, resetPassword } from "../lib/auth-api";
 import { DoctorAuthLayout } from "./doctor-auth-layout";
+import { Icon } from "./icons";
 
 export function PasswordResetRequestForm() {
   const [email, setEmail] = useState("");
@@ -38,6 +39,8 @@ export function PasswordResetConfirmForm({ token }: { token?: string }) {
   const [confirmation, setConfirmation] = useState("");
   const [message, setMessage] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmation, setShowConfirmation] = useState(false);
   const invalidToken = !token || token.length < 32;
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -58,8 +61,8 @@ export function PasswordResetConfirmForm({ token }: { token?: string }) {
 
   return <AuthCard title="Choisissez un nouveau mot de passe" intro="Utilisez au moins 12 caractères.">
     {invalidToken ? <p className="auth-form-message" role="alert">Ce lien est invalide ou incomplet.</p> : <form className="doctor-auth-form" onSubmit={submit}>
-      <div className="auth-field"><label htmlFor="password">Nouveau mot de passe</label><input id="password" type="password" autoComplete="new-password" minLength={12} value={password} onChange={(event) => setPassword(event.target.value)} required /></div>
-      <div className="auth-field"><label htmlFor="confirmation">Confirmer le mot de passe</label><input id="confirmation" type="password" autoComplete="new-password" minLength={12} value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required /></div>
+      <div className="auth-field"><label htmlFor="password">Nouveau mot de passe</label><div className="password-input-wrap"><input id="password" type={showPassword ? "text" : "password"} autoComplete="new-password" minLength={12} value={password} onChange={(event) => setPassword(event.target.value)} required /><button className="password-toggle" type="button" aria-label={showPassword ? "Masquer le mot de passe" : "Afficher le mot de passe"} aria-pressed={showPassword} onClick={() => setShowPassword((visible) => !visible)}><Icon name={showPassword ? "eye-off" : "eye"} /></button></div></div>
+      <div className="auth-field"><label htmlFor="confirmation">Confirmer le mot de passe</label><div className="password-input-wrap"><input id="confirmation" type={showConfirmation ? "text" : "password"} autoComplete="new-password" minLength={12} value={confirmation} onChange={(event) => setConfirmation(event.target.value)} required /><button className="password-toggle" type="button" aria-label={showConfirmation ? "Masquer la confirmation" : "Afficher la confirmation"} aria-pressed={showConfirmation} onClick={() => setShowConfirmation((visible) => !visible)}><Icon name={showConfirmation ? "eye-off" : "eye"} /></button></div></div>
       {message ? <p className="auth-form-message" role="status">{message}</p> : null}
       <button className="primary-button auth-submit" disabled={submitting}>{submitting ? "Modification…" : "Modifier mon mot de passe"}</button>
     </form>}

@@ -76,7 +76,8 @@ export class AuthApiError extends Error {
   }
 }
 
-const apiUrl = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000").replace(/\/$/, "");
+// Next.js runs on port 3000; the NestJS API runs on port 3001 locally.
+const apiUrl = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3001").replace(/\/$/, "");
 
 export function doctorPhotoUrl(path: string | null) {
   if (!path) return null;
