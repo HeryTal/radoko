@@ -118,6 +118,11 @@ export function PublicDoctorProfilePage({ doctorId }: { doctorId: string }) {
       day: longWeekDays[availability.weekday],
       hours: `${availability.startTime} – ${availability.endTime}`,
     }));
+  const practiceLocation = [profile.practiceAddress, profile.practiceCity].filter(Boolean).join(", ");
+  const mapsSearchUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(practiceLocation)}`;
+  const mapsEmbedUrl = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
+    ? `https://www.google.com/maps/embed/v1/place?key=${encodeURIComponent(process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY)}&q=${encodeURIComponent(practiceLocation)}`
+    : `https://www.google.com/maps?q=${encodeURIComponent(practiceLocation)}&output=embed`;
 
   async function handleBooking(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -189,6 +194,22 @@ export function PublicDoctorProfilePage({ doctorId }: { doctorId: string }) {
               {profile.phone && <div><dt>Téléphone professionnel</dt><dd><a href={`tel:${profile.phone.replace(/[^\d+]/g, "")}`}>{profile.phone}</a></dd></div>}
             </dl>
           </section>
+          {practiceLocation && <section className="public-doctor-section public-doctor-map-section">
+            <div className="public-doctor-map-heading">
+              <h2>Lieu de consultation</h2>
+              <a href={mapsSearchUrl} target="_blank" rel="noreferrer">Itinéraire <span aria-hidden="true">↗</span></a>
+            </div>
+            <p className="public-doctor-map-address">{practiceLocation}</p>
+            <div className="public-doctor-map-frame">
+              <iframe
+                src={mapsEmbedUrl}
+                title={`Localisation du cabinet de ${profile.name ?? profile.professionalType}`}
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                allowFullScreen
+              />
+            </div>
+          </section>}
           <section className="public-doctor-section"><h2>Horaires habituels</h2>
             {weekdays.length
               ? <ul className="public-doctor-hours">{weekdays.map((availability, index) => <li key={`${availability.day}-${availability.hours}-${index}`}><span>{availability.day}</span><span>{availability.hours}</span></li>)}</ul>
