@@ -9,8 +9,10 @@ import {
   downloadVerificationDocument,
   getDoctorProfile,
   getPendingProfessionals,
+  getPendingReviews,
+  moderateReview,
   reviewProfessional,
-  type PendingProfessional,
+  type PendingProfessional, type PendingReview,
 } from "../lib/auth-api";
 
 export function AdminDashboard() {
@@ -18,13 +20,24 @@ export function AdminDashboard() {
   const { confirm, confirmationDialog } = useConfirmation();
   const [token, setToken] = useState("");
   const [professionals, setProfessionals] = useState<PendingProfessional[]>([]);
+  const [reviews, setReviews] = useState<PendingReview[]>([]);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [reasons, setReasons] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
 
   async function reload(accessToken: string) {
-    setProfessionals(await getPendingProfessionals(accessToken));
+    const [professionals, reviews] = await Promise.all([getPendingProfessionals(accessToken), getPendingReviews(accessToken)]);
+    setProfessionals(professionals);
+    setReviews(reviews);
+  }
+
+  async function decideReview(reviewId: string, decision: "approve" | "reject") {
+    try {
+      await moderateReview(token, reviewId, decision);
+      await reload(token);
+      setMessage(decision === "approve" ? "Avis publié." : "Avis refusé.");
+    } catch (reason) { setError(reason instanceof Error ? reason.message : "Impossible de modérer cet avis."); }
   }
 
   useEffect(() => {
@@ -132,6 +145,10 @@ export function AdminDashboard() {
                 </article>
               ))}
             </div>}
+        </section>
+        <section className="dashboard-panel">
+          <div className="dashboard-panel-heading"><div><span className="dashboard-section-kicker">MODÉRATION</span><h2>Avis en attente</h2></div><span className="dashboard-profile-status">{reviews.length}</span></div>
+          {reviews.length === 0 ? <p className="dashboard-editor-intro">Aucun avis à modérer.</p> : <div className="admin-professionals">{reviews.map((review) => <article className="admin-professional-card" key={review.id}><h3>{review.doctor.name || review.doctor.email}</h3><p>{"★".repeat(review.rating)}{"☆".repeat(5 - review.rating)} · Patient : {review.appointment.patientName}</p>{review.comment && <p>{review.comment}</p>}<div className="admin-decision-actions"><button type="button" onClick={() => void decideReview(review.id, "approve")}>Publier</button><button type="button" className="is-danger-action" onClick={() => void decideReview(review.id, "reject")}>Refuser</button></div></article>)}</div>}
         </section>
       </div>
     </main>

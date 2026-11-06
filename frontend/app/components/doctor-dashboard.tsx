@@ -7,15 +7,17 @@ import { useEffect, useState, type FormEvent } from "react";
 import { DoctorAvailabilityEditor } from "./doctor-availability-editor";
 import { DoctorProfileEditor } from "./doctor-profile-editor";
 import { useConfirmation } from "./confirmation-dialog";
-import type { Appointment, AuthUser } from "../lib/auth-api";
+import type { Appointment, AuthUser, DoctorReview } from "../lib/auth-api";
 import {
   AuthApiError,
   deleteMyAccount,
   doctorPhotoUrl,
   getDoctorAppointments,
+  getDoctorReviews,
   getDoctorProfile,
   rescheduleAppointment,
   setAppointmentStatus,
+  respondToReview,
   uploadVerificationDocument,
 } from "../lib/auth-api";
 
@@ -54,6 +56,9 @@ export function DoctorDashboard() {
   const [profile, setProfile] = useState<AuthUser | null>(null);
   const [accessToken, setAccessToken] = useState("");
   const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [reviews, setReviews] = useState<DoctorReview[]>([]);
+  const [reviewResponses, setReviewResponses] = useState<Record<string, string>>({});
+  const [reviewsError, setReviewsError] = useState("");
   const [appointmentsError, setAppointmentsError] = useState("");
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -84,6 +89,7 @@ export function DoctorDashboard() {
         }
         if (isCurrent) setAccessToken(accessToken);
         if (isCurrent) setProfile(doctor);
+        getDoctorReviews(accessToken).then((items) => { if (isCurrent) setReviews(items); }).catch((reason: unknown) => { if (isCurrent) setReviewsError(reason instanceof Error ? reason.message : "Impossible de charger les avis."); });
         return getDoctorAppointments(accessToken);
       })
       .then((bookings) => {
@@ -177,6 +183,17 @@ export function DoctorDashboard() {
     } catch (actionError) {
       setAppointmentActionError(actionError instanceof Error ? actionError.message : "Impossible de mettre à jour le rendez-vous.");
       throw actionError;
+    }
+  }
+
+  async function saveReviewResponse(reviewId: string) {
+    const response = reviewResponses[reviewId]?.trim();
+    if (!response) return;
+    try {
+      const updated = await respondToReview(accessToken, reviewId, response);
+      setReviews((current) => current.map((review) => review.id === reviewId ? { ...review, doctorResponse: updated.doctorResponse, respondedAt: updated.respondedAt } : review));
+    } catch (reason) {
+      setReviewsError(reason instanceof Error ? reason.message : "Impossible d’enregistrer la réponse.");
     }
   }
 
@@ -458,6 +475,20 @@ export function DoctorDashboard() {
                   </div>
                 : <p className="dashboard-editor-intro">Aucun rendez-vous à venir. Vos réservations apparaîtront ici.</p>}
             {appointmentActionError && <p className="dashboard-form-message is-error" role="alert">{appointmentActionError}</p>}
+          </section>
+
+          <section className="dashboard-panel dashboard-management-panel" id="avis">
+            <div className="dashboard-panel-heading">
+              <div><span className="dashboard-section-kicker">RÉPUTATION</span><h2>Avis des patients</h2></div>
+              <span className="dashboard-profile-status">{reviews.filter((review) => review.status === "APPROVED").length} publiés</span>
+            </div>
+            {reviewsError && <p className="dashboard-form-message is-error" role="alert">{reviewsError}</p>}
+            {!reviews.length && !reviewsError && <p className="dashboard-editor-intro">Les avis reçus apparaîtront ici après modération.</p>}
+            <div className="dashboard-review-list">{reviews.map((review) => <article className="dashboard-review" key={review.id}>
+              <div><strong className="dashboard-review-stars">{"★".repeat(review.rating)}<span>{"★".repeat(5 - review.rating)}</span></strong><small>{review.status === "PENDING" ? "En attente de modération" : review.status === "APPROVED" ? "Publié" : "Refusé"}</small></div>
+              {review.comment && <p>{review.comment}</p>}
+              {review.status === "APPROVED" && <>{review.doctorResponse ? <div className="dashboard-review-response"><strong>Votre réponse</strong><p>{review.doctorResponse}</p></div> : <div className="dashboard-review-reply"><textarea value={reviewResponses[review.id] ?? ""} onChange={(event) => setReviewResponses((current) => ({ ...current, [review.id]: event.target.value }))} maxLength={1000} rows={2} placeholder="Répondre au patient…" /><button type="button" onClick={() => void saveReviewResponse(review.id)}>Publier la réponse</button></div>}</>}
+            </article>)}</div>
           </section>
 
           <footer className="dashboard-footer">

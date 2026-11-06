@@ -17,6 +17,8 @@ import { CreateAppointmentDto } from './dto/create-appointment.dto.js';
 import { LoginDto } from './dto/login.dto.js';
 import { RegisterDto } from './dto/register.dto.js';
 import { UpdateAvailabilityDto } from './dto/update-availability.dto.js';
+import { CreateReviewDto } from './dto/create-review.dto.js';
+import { DoctorReviewResponseDto } from './dto/doctor-review-response.dto.js';
 import { UpdateDoctorProfileDto } from './dto/update-doctor-profile.dto.js';
 import { NotificationService } from '../notifications/notification.service.js';
 
@@ -70,6 +72,11 @@ const publicProfileSelect = {
   availabilities: {
     orderBy: [{ weekday: 'asc' as const }, { startTime: 'asc' as const }],
     select: { weekday: true, startTime: true, endTime: true },
+  },
+  reviews: {
+    where: { status: 'APPROVED' as const },
+    orderBy: { createdAt: 'desc' as const },
+    select: { rating: true, comment: true, doctorResponse: true, createdAt: true },
   },
 };
 
@@ -554,6 +561,53 @@ export class AuthService {
     return doctor;
   }
 
+  async createReview(input: CreateReviewDto) {
+    const appointment = await this.prisma.appointment.findFirst({
+      where: {
+        reviewTokenHash: this.hashCancellationToken(input.token),
+        reviewTokenExpiresAt: { gt: new Date() },
+        status: 'COMPLETED',
+      },
+      select: { id: true, doctorId: true },
+    });
+    if (!appointment) throw new NotFoundException('Ce lien d’avis est invalide ou expiré.');
+
+    try {
+      return await this.prisma.review.create({
+        data: {
+          doctorId: appointment.doctorId,
+          appointmentId: appointment.id,
+          rating: input.rating,
+          comment: input.comment?.trim() || null,
+        },
+        select: { id: true, status: true },
+      });
+    } catch (error) {
+      if (error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002') {
+        throw new ConflictException('Un avis a déjà été envoyé pour ce rendez-vous.');
+      }
+      throw error;
+    }
+  }
+
+  async respondToReview(doctorId: string, reviewId: string, input: DoctorReviewResponseDto) {
+    const review = await this.prisma.review.findFirst({ where: { id: reviewId, doctorId, status: 'APPROVED' } });
+    if (!review) throw new NotFoundException('Avis introuvable ou non publié.');
+    return this.prisma.review.update({
+      where: { id: reviewId },
+      data: { doctorResponse: input.response.trim(), respondedAt: new Date() },
+      select: { id: true, doctorResponse: true, respondedAt: true },
+    });
+  }
+
+  async getDoctorReviews(doctorId: string) {
+    return this.prisma.review.findMany({
+      where: { doctorId },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, rating: true, comment: true, status: true, doctorResponse: true, respondedAt: true, createdAt: true },
+    });
+  }
+
   async searchPublicProfiles(specialty?: string, city?: string) {
     return this.prisma.user.findMany({
       where: {
@@ -738,6 +792,7 @@ export class AuthService {
             (status === 'COMPLETED' &&
               appointment.startsAt.getTime() + appointment.durationMinutes * 60_000 <= now.getTime())));
       if (!valid) throw new BadRequestException('Cette transition de statut n’est pas autorisée.');
+      const reviewToken = status === 'COMPLETED' ? randomBytes(32).toString('base64url') : null;
       const update = await transaction.appointment.updateMany({
         where: { id: appointmentId, doctorId, status: appointment.status },
         data: {
@@ -750,6 +805,12 @@ export class AuthService {
                 patientPrivacyTokenExpiresAt: retentionExpiration(now),
               }
             : {}),
+          ...(reviewToken
+            ? {
+                reviewTokenHash: this.hashCancellationToken(reviewToken),
+                reviewTokenExpiresAt: new Date(Date.now() + 90 * 24 * 60 * 60_000),
+              }
+            : {}),
         },
       });
       if (!update.count) throw new ConflictException('Le statut du rendez-vous a changé. Actualisez la page.');
@@ -760,6 +821,16 @@ export class AuthService {
         appointmentId,
         transaction,
       );
+      if (reviewToken) {
+        const frontendUrl = (process.env.FRONTEND_URL ?? 'http://localhost:3000').split(',')[0].trim();
+        await this.notifications.enqueue(
+          appointment.patientEmail,
+          'Partagez votre expérience sur Radoko',
+          `Votre rendez-vous est terminé. Vous pouvez laisser un avis au professionnel : ${frontendUrl}/avis?token=${encodeURIComponent(reviewToken)}`,
+          appointmentId,
+          transaction,
+        );
+      }
       return { id: appointmentId, status, startsAt: appointment.startsAt };
     });
   }

@@ -48,6 +48,35 @@ export class AdminController {
     });
   }
 
+  @Get('reviews/pending')
+  getPendingReviews() {
+    return this.prisma.review.findMany({
+      where: { status: 'PENDING' },
+      orderBy: { createdAt: 'asc' },
+      select: {
+        id: true, rating: true, comment: true, createdAt: true,
+        doctor: { select: { id: true, name: true, email: true } },
+        appointment: { select: { patientName: true, startsAt: true } },
+      },
+    });
+  }
+
+  @Patch('reviews/:reviewId/:decision')
+  async moderateReview(
+    @Param('reviewId') reviewId: string,
+    @Param('decision') decision: 'approve' | 'reject',
+  ) {
+    if (!['approve', 'reject'].includes(decision)) {
+      throw new BadRequestException('Décision de modération invalide.');
+    }
+    const updated = await this.prisma.review.updateMany({
+      where: { id: reviewId, status: 'PENDING' },
+      data: { status: decision === 'approve' ? 'APPROVED' : 'REJECTED' },
+    });
+    if (!updated.count) throw new NotFoundException('Avis introuvable ou déjà modéré.');
+    return { id: reviewId, status: decision === 'approve' ? 'APPROVED' : 'REJECTED' };
+  }
+
   @Get('verification-documents/:documentId')
   async getVerificationDocument(
     @Param('documentId') documentId: string,

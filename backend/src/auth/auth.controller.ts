@@ -30,6 +30,8 @@ import { UpdateAppointmentStatusDto } from './dto/update-appointment-status.dto.
 import { RescheduleAppointmentDto } from './dto/reschedule-appointment.dto.js';
 import { RequestPasswordResetDto } from './dto/request-password-reset.dto.js';
 import { ResetPasswordDto } from './dto/reset-password.dto.js';
+import { CreateReviewDto } from './dto/create-review.dto.js';
+import { DoctorReviewResponseDto } from './dto/doctor-review-response.dto.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import type { AuthenticatedRequest } from './interfaces/authenticated-request.interface.js';
 
@@ -107,6 +109,22 @@ export class AuthController {
       appointmentId,
       input.status,
     );
+  }
+
+  @Get('me/reviews')
+  @UseGuards(JwtAuthGuard)
+  getDoctorReviews(@Req() request: AuthenticatedRequest) {
+    return this.authService.getDoctorReviews(request.user.sub);
+  }
+
+  @Patch('me/reviews/:reviewId/response')
+  @UseGuards(JwtAuthGuard)
+  respondToReview(
+    @Req() request: AuthenticatedRequest,
+    @Param('reviewId') reviewId: string,
+    @Body() input: DoctorReviewResponseDto,
+  ) {
+    return this.authService.respondToReview(request.user.sub, reviewId, input);
   }
 
   @Patch('me/appointments/:appointmentId/reschedule')
@@ -205,6 +223,13 @@ export class AuthController {
     @Query('date') date: string,
   ) {
     return this.authService.getPublicBookedSlots(doctorId, date);
+  }
+
+  @Post('public/reviews')
+  @HttpCode(HttpStatus.CREATED)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  createReview(@Body() input: CreateReviewDto) {
+    return this.authService.createReview(input);
   }
 
   @Post('public/:doctorId/appointments')

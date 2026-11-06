@@ -118,6 +118,9 @@ export function PublicDoctorProfilePage({ doctorId }: { doctorId: string }) {
       day: longWeekDays[availability.weekday],
       hours: `${availability.startTime} – ${availability.endTime}`,
     }));
+  const averageRating = profile.reviews.length
+    ? (profile.reviews.reduce((sum, review) => sum + review.rating, 0) / profile.reviews.length).toFixed(1)
+    : null;
   const practiceLocation = [profile.practiceAddress, profile.practiceCity].filter(Boolean).join(", ");
   const mapsSearchUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(practiceLocation)}`;
   const mapsEmbedUrl = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY
@@ -186,6 +189,7 @@ export function PublicDoctorProfilePage({ doctorId }: { doctorId: string }) {
 
           {profile.bio && <section className="public-doctor-section"><h2>À propos</h2><p>{profile.bio}</p>{profile.experienceYears !== null && <p className="public-doctor-experience">{profile.experienceYears} ans d’expérience</p>}</section>}
           {profile.services.length > 0 && <section className="public-doctor-section"><h2>Services proposés</h2><ul className="public-doctor-tags">{profile.services.map((service) => <li key={service}>{service}</li>)}</ul></section>}
+          {profile.reviews.length > 0 && <section className="public-doctor-section public-doctor-reviews"><div className="public-doctor-map-heading"><h2>Avis des patients</h2><strong className="public-doctor-rating">★ {averageRating} <small>({profile.reviews.length})</small></strong></div><div className="public-review-list">{profile.reviews.map((review, index) => <article key={`${review.createdAt}-${index}`} className="public-review"><div className="public-review-rating" aria-label={`${review.rating} sur 5`}>{"★".repeat(review.rating)}<span>{"★".repeat(5 - review.rating)}</span></div>{review.comment && <p>{review.comment}</p>}{review.doctorResponse && <div className="public-review-response"><strong>Réponse du professionnel</strong><p>{review.doctorResponse}</p></div>}</article>)}</div></section>}
           <section className="public-doctor-section"><h2>Informations pratiques</h2>
             <dl className="public-doctor-details">
               <div><dt>Langues parlées</dt><dd>{profile.spokenLanguages.join(", ") || "À confirmer avec le professionnel"}</dd></div>

@@ -32,6 +32,12 @@ enum NotificationStatus {
   SENT
 }
 
+enum ReviewStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
 model User {
   id                        String           @id @default(cuid())
   email                     String           @unique
@@ -60,6 +66,7 @@ model User {
   availabilities            Availability[]
   appointments              Appointment[]
   verificationDocuments     VerificationDocument[]
+  reviews                   Review[]
   createdAt                 DateTime         @default(now())
   updatedAt                 DateTime         @updatedAt
 }
@@ -91,14 +98,34 @@ model Appointment {
   cancellationExpiresAt DateTime?
   patientPrivacyTokenHash String?     @unique
   patientPrivacyTokenExpiresAt DateTime?
+  reviewTokenHash         String?     @unique
+  reviewTokenExpiresAt    DateTime?
   anonymizedAt     DateTime?
   closedAt         DateTime?
   doctor           User     @relation(fields: [doctorId], references: [id], onDelete: Cascade)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
+  review            Review?
 
   @@index([doctorId, startsAt])
   @@index([status, startsAt])
+}
+
+model Review {
+  id             String       @id @default(cuid())
+  doctorId       String
+  appointmentId  String       @unique
+  rating         Int
+  comment        String?      @db.VarChar(1000)
+  status         ReviewStatus @default(PENDING)
+  doctorResponse String?      @db.VarChar(1000)
+  respondedAt    DateTime?
+  doctor         User         @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  appointment    Appointment  @relation(fields: [appointmentId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([doctorId, status, createdAt])
 }
 
 model VerificationDocument {

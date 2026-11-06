@@ -34,7 +34,22 @@ export type AvailabilityWindow = {
   endTime: string;
 };
 
-export type PublicDoctorProfile = Omit<AuthUser, "email" | "createdAt">;
+export type PublicReview = {
+  rating: number;
+  comment: string | null;
+  doctorResponse: string | null;
+  createdAt: string;
+};
+
+export type PublicDoctorProfile = Omit<AuthUser, "email" | "createdAt"> & {
+  reviews: PublicReview[];
+};
+
+export type DoctorReview = PublicReview & {
+  id: string;
+  status: "PENDING" | "APPROVED" | "REJECTED";
+  respondedAt: string | null;
+};
 
 export type Appointment = {
   id: string;
@@ -307,6 +322,39 @@ export async function downloadVerificationDocument(accessToken: string, document
 
 export async function getPublicDoctorProfile(doctorId: string) {
   return publicRequest<PublicDoctorProfile>(`/auth/public/${encodeURIComponent(doctorId)}`);
+}
+
+export function createReview(input: { token: string; rating: number; comment?: string }) {
+  return request<{ id: string; status: "PENDING" }>("/auth/public/reviews", input);
+}
+
+export function getDoctorReviews(accessToken: string) {
+  return authenticatedRequest<DoctorReview[]>("/auth/me/reviews", accessToken);
+}
+
+export function respondToReview(accessToken: string, reviewId: string, response: string) {
+  return authenticatedRequest<{ id: string; doctorResponse: string; respondedAt: string }>(
+    `/auth/me/reviews/${encodeURIComponent(reviewId)}/response`, accessToken, "PATCH", { response },
+  );
+}
+
+export type PendingReview = {
+  id: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
+  doctor: { id: string; name: string | null; email: string };
+  appointment: { patientName: string; startsAt: string };
+};
+
+export function getPendingReviews(accessToken: string) {
+  return authenticatedRequest<PendingReview[]>("/admin/reviews/pending", accessToken);
+}
+
+export function moderateReview(accessToken: string, reviewId: string, decision: "approve" | "reject") {
+  return authenticatedRequest<{ id: string; status: "APPROVED" | "REJECTED" }>(
+    `/admin/reviews/${encodeURIComponent(reviewId)}/${decision}`, accessToken, "PATCH",
+  );
 }
 
 export async function searchPublicDoctors(specialty: string, city: string) {
