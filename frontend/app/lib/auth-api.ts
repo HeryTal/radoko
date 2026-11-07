@@ -328,6 +328,16 @@ export function createReview(input: { token: string; rating: number; comment?: s
   return request<{ id: string; status: "PENDING" }>("/auth/public/reviews", input);
 }
 
+export function contactDoctor(doctorId: string, input: {
+  name: string;
+  email: string;
+  phone: string;
+  message: string;
+  privacyConsent: boolean;
+}) {
+  return request<{ accepted: true }>(`/auth/public/${encodeURIComponent(doctorId)}/contact`, input);
+}
+
 export function getDoctorReviews(accessToken: string) {
   return authenticatedRequest<DoctorReview[]>("/auth/me/reviews", accessToken);
 }

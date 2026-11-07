@@ -3,10 +3,15 @@
 import { useEffect, useMemo, useState, type FormEvent } from "react";
 import Link from "next/link";
 import type { PublicDoctorProfile } from "../lib/auth-api";
-import { AuthApiError, createAppointment, doctorPhotoUrl, getPublicBookedSlots, getPublicDoctorProfile } from "../lib/auth-api";
+import { AuthApiError, contactDoctor, createAppointment, doctorPhotoUrl, getPublicBookedSlots, getPublicDoctorProfile } from "../lib/auth-api";
 
 const weekDays = ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"];
 const longWeekDays = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+
+function phoneForWhatsApp(phone: string) {
+  const digits = phone.replace(/[^\d]/g, "");
+  return digits.startsWith("0") ? `261${digits.slice(1)}` : digits;
+}
 
 function madagascarDateString(date = new Date()) {
   const parts = new Intl.DateTimeFormat("en-CA", {
@@ -69,6 +74,9 @@ export function PublicDoctorProfilePage({ doctorId }: { doctorId: string }) {
   const [bookingError, setBookingError] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
   const [isLoadingSlots, setIsLoadingSlots] = useState(true);
+  const [isContacting, setIsContacting] = useState(false);
+  const [contactMessage, setContactMessage] = useState("");
+  const [contactError, setContactError] = useState(false);
 
   useEffect(() => {
     let current = true;
@@ -166,6 +174,31 @@ export function PublicDoctorProfilePage({ doctorId }: { doctorId: string }) {
     setMonth((current) => new Date(Date.UTC(current.getUTCFullYear(), current.getUTCMonth() + amount, 1)));
   }
 
+  async function handleContact(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const data = new FormData(form);
+    setIsContacting(true);
+    setContactError(false);
+    setContactMessage("");
+    try {
+      await contactDoctor(doctorId, {
+        name: String(data.get("contactName") ?? ""),
+        email: String(data.get("contactEmail") ?? ""),
+        phone: String(data.get("contactPhone") ?? ""),
+        message: String(data.get("contactMessage") ?? ""),
+        privacyConsent: data.get("contactPrivacyConsent") === "on",
+      });
+      form.reset();
+      setContactMessage("Votre message a bien été envoyé au professionnel.");
+    } catch (error) {
+      setContactError(true);
+      setContactMessage(error instanceof Error ? error.message : "Impossible d’envoyer votre message.");
+    } finally {
+      setIsContacting(false);
+    }
+  }
+
   return (
     <main className="public-doctor-page">
       <header className="public-doctor-header">
@@ -190,6 +223,10 @@ export function PublicDoctorProfilePage({ doctorId }: { doctorId: string }) {
           {profile.bio && <section className="public-doctor-section"><h2>À propos</h2><p>{profile.bio}</p>{profile.experienceYears !== null && <p className="public-doctor-experience">{profile.experienceYears} ans d’expérience</p>}</section>}
           {profile.services.length > 0 && <section className="public-doctor-section"><h2>Services proposés</h2><ul className="public-doctor-tags">{profile.services.map((service) => <li key={service}>{service}</li>)}</ul></section>}
           {profile.reviews.length > 0 && <section className="public-doctor-section public-doctor-reviews"><div className="public-doctor-map-heading"><h2>Avis des patients</h2><strong className="public-doctor-rating">★ {averageRating} <small>({profile.reviews.length})</small></strong></div><div className="public-review-list">{profile.reviews.map((review, index) => <article key={`${review.createdAt}-${index}`} className="public-review"><div className="public-review-rating" aria-label={`${review.rating} sur 5`}>{"★".repeat(review.rating)}<span>{"★".repeat(5 - review.rating)}</span></div>{review.comment && <p>{review.comment}</p>}{review.doctorResponse && <div className="public-review-response"><strong>Réponse du professionnel</strong><p>{review.doctorResponse}</p></div>}</article>)}</div></section>}
+          {profile.phone && <div className="public-doctor-contact-actions">
+            <a className="public-contact-button" href={`tel:${profile.phone.replace(/[^\d+]/g, "")}`}>Appeler</a>
+            <a className="public-contact-button is-whatsapp" href={`https://wa.me/${phoneForWhatsApp(profile.phone)}`} target="_blank" rel="noreferrer">WhatsApp</a>
+          </div>}
           <section className="public-doctor-section"><h2>Informations pratiques</h2>
             <dl className="public-doctor-details">
               <div><dt>Langues parlées</dt><dd>{profile.spokenLanguages.join(", ") || "À confirmer avec le professionnel"}</dd></div>
@@ -214,6 +251,19 @@ export function PublicDoctorProfilePage({ doctorId }: { doctorId: string }) {
               />
             </div>
           </section>}
+          <section className="public-doctor-section public-contact-section">
+            <h2>Contacter le professionnel</h2>
+            <p>Une question avant de prendre rendez-vous ? Votre message sera transmis directement au professionnel.</p>
+            <form className="public-contact-form" onSubmit={handleContact}>
+              <label>Nom complet<input name="contactName" autoComplete="name" maxLength={100} required /></label>
+              <label>E-mail<input name="contactEmail" type="email" autoComplete="email" maxLength={254} required /></label>
+              <label>Téléphone<input name="contactPhone" type="tel" autoComplete="tel" maxLength={30} required /></label>
+              <label>Message<textarea name="contactMessage" maxLength={1000} minLength={10} rows={4} required /></label>
+              <label className="public-contact-consent"><input name="contactPrivacyConsent" type="checkbox" required />J’accepte que mes coordonnées soient transmises au professionnel pour répondre à mon message. <Link href="/confidentialite" target="_blank">En savoir plus</Link>.</label>
+              <button className="public-booking-submit" type="submit" disabled={isContacting}>{isContacting ? "Envoi…" : "Envoyer le message"}</button>
+            </form>
+            {contactMessage && <p className={`public-booking-message${contactError ? " is-error" : ""}`} role={contactError ? "alert" : "status"}>{contactMessage}</p>}
+          </section>
           <section className="public-doctor-section"><h2>Horaires habituels</h2>
             {weekdays.length
               ? <ul className="public-doctor-hours">{weekdays.map((availability, index) => <li key={`${availability.day}-${availability.hours}-${index}`}><span>{availability.day}</span><span>{availability.hours}</span></li>)}</ul>

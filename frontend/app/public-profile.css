@@ -69,6 +69,18 @@
 .public-doctor-details dt { margin-bottom: 5px; color: #8797a0; font-size: 9px; }
 .public-doctor-details dd, .public-doctor-details dd a { margin: 0; color: #435e6e; font-size: 10px; line-height: 1.5; }
 .public-doctor-details dd a:hover { color: #168b83; }
+.public-doctor-contact-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 18px; }
+.public-contact-button { display: inline-flex; min-height: 34px; align-items: center; justify-content: center; padding: 0 13px; border: 1px solid #168b83; border-radius: 5px; color: #168b83; font-size: 10px; font-weight: 650; }
+.public-contact-button:hover { background: #eaf5f2; }
+.public-contact-button.is-whatsapp { border-color: #43a86e; color: #328654; }
+.public-contact-button.is-whatsapp:hover { background: #eef9f1; }
+.public-contact-form { display: grid; gap: 10px; margin-top: 14px; }
+.public-contact-form label { display: grid; gap: 5px; color: #526c7a; font-size: 10px; }
+.public-contact-form input, .public-contact-form textarea { width: 100%; padding: 8px 9px; border: 1px solid #dfe8ea; border-radius: 4px; color: #25475b; font-size: 11px; }
+.public-contact-form textarea { resize: vertical; }
+.public-contact-consent { display: flex !important; grid-template-columns: 15px 1fr; align-items: flex-start; gap: 7px; color: #607987 !important; font-size: 9px !important; line-height: 1.6; }
+.public-contact-consent input { width: 14px; min-height: 14px; flex: 0 0 14px; margin-top: 1px; }
+.public-contact-consent a { color: #168b83; text-decoration: underline; }
 .public-doctor-map-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
 .public-doctor-map-heading h2 { margin-bottom: 0; }
 .public-doctor-map-heading a { color: #168b83; font-size: 10px; font-weight: 650; }

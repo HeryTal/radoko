@@ -32,6 +32,7 @@ import { RequestPasswordResetDto } from './dto/request-password-reset.dto.js';
 import { ResetPasswordDto } from './dto/reset-password.dto.js';
 import { CreateReviewDto } from './dto/create-review.dto.js';
 import { DoctorReviewResponseDto } from './dto/doctor-review-response.dto.js';
+import { CreateContactMessageDto } from './dto/create-contact-message.dto.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import type { AuthenticatedRequest } from './interfaces/authenticated-request.interface.js';
 
@@ -240,6 +241,16 @@ export class AuthController {
     @Body() input: CreateAppointmentDto,
   ) {
     return this.authService.createAppointment(doctorId, input);
+  }
+
+  @Post('public/:doctorId/contact')
+  @HttpCode(HttpStatus.ACCEPTED)
+  @Throttle({ default: { limit: 5, ttl: 60_000 } })
+  contactDoctor(
+    @Param('doctorId') doctorId: string,
+    @Body() input: CreateContactMessageDto,
+  ) {
+    return this.authService.contactDoctor(doctorId, input);
   }
 
   @Post('public/appointments/cancel')

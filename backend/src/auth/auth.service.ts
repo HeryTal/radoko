@@ -19,6 +19,7 @@ import { RegisterDto } from './dto/register.dto.js';
 import { UpdateAvailabilityDto } from './dto/update-availability.dto.js';
 import { CreateReviewDto } from './dto/create-review.dto.js';
 import { DoctorReviewResponseDto } from './dto/doctor-review-response.dto.js';
+import { CreateContactMessageDto } from './dto/create-contact-message.dto.js';
 import { UpdateDoctorProfileDto } from './dto/update-doctor-profile.dto.js';
 import { NotificationService } from '../notifications/notification.service.js';
 
@@ -588,6 +589,33 @@ export class AuthService {
       }
       throw error;
     }
+  }
+
+  async contactDoctor(doctorId: string, input: CreateContactMessageDto) {
+    if (!input.privacyConsent) {
+      throw new BadRequestException('Votre accord sur le traitement des données est requis.');
+    }
+    const doctor = await this.prisma.user.findFirst({
+      where: { id: doctorId, role: 'PROFESSIONAL', isVerified: true },
+      select: { email: true },
+    });
+    if (!doctor) throw new NotFoundException('Profil médecin introuvable.');
+
+    await this.notifications.enqueue(
+      doctor.email,
+      `Nouveau message de contact sur Radoko — ${input.name}`,
+      `Vous avez reçu un message depuis votre fiche Radoko.
+
+Nom : ${input.name}
+E-mail : ${input.email}
+Téléphone : ${input.phone}
+
+Message :
+${input.message}
+
+Vous pouvez répondre directement à ${input.email}.`,
+    );
+    return { accepted: true };
   }
 
   async respondToReview(doctorId: string, reviewId: string, input: DoctorReviewResponseDto) {
