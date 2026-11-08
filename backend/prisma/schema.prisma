@@ -67,6 +67,8 @@ model User {
   appointments              Appointment[]
   verificationDocuments     VerificationDocument[]
   reviews                   Review[]
+  calendarBlocks            CalendarBlock[]
+  calendarFeedTokenHash     String?          @unique
   createdAt                 DateTime         @default(now())
   updatedAt                 DateTime         @updatedAt
 }
@@ -81,6 +83,18 @@ model Availability {
   createdAt DateTime @default(now())
 
   @@index([doctorId, weekday])
+}
+
+model CalendarBlock {
+  id        String   @id @default(cuid())
+  doctorId  String
+  startsAt  DateTime
+  endsAt    DateTime
+  note      String?  @db.VarChar(200)
+  doctor    User     @relation(fields: [doctorId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([doctorId, startsAt, endsAt])
 }
 
 model Appointment {

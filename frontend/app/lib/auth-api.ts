@@ -62,6 +62,18 @@ export type Appointment = {
   status: "REQUESTED" | "CONFIRMED" | "DECLINED" | "CANCELLED" | "COMPLETED";
 };
 
+export type CalendarData = {
+  appointments: Array<{
+    id: string;
+    startsAt: string;
+    durationMinutes: number;
+    patientName: string;
+    status: Appointment["status"];
+    reason: string | null;
+  }>;
+  blocks: Array<{ id: string; startsAt: string; endsAt: string; note: string | null }>;
+};
+
 export type PublicDoctorSummary = Pick<
   PublicDoctorProfile,
   | "id"
@@ -212,6 +224,43 @@ export function updateDoctorAvailability(accessToken: string, windows: Availabil
 
 export function getDoctorAppointments(accessToken: string) {
   return authenticatedRequest<Appointment[]>("/auth/me/appointments", accessToken);
+}
+
+export function getDoctorCalendar(accessToken: string, from: string, to: string) {
+  return authenticatedRequest<CalendarData>(`/auth/me/calendar?from=${encodeURIComponent(from)}&to=${encodeURIComponent(to)}`, accessToken);
+}
+
+export function createCalendarBlock(accessToken: string, input: { startsAt: string; endsAt: string; note?: string }) {
+  return authenticatedRequest<CalendarData["blocks"][number]>("/auth/me/calendar/blocks", accessToken, "POST", input);
+}
+
+export function deleteCalendarBlock(accessToken: string, blockId: string) {
+  return authenticatedRequest<{ deleted: true }>(`/auth/me/calendar/blocks/${encodeURIComponent(blockId)}`, accessToken, "DELETE");
+}
+
+export async function getCalendarFeedUrl(accessToken: string) {
+  const { token } = await authenticatedRequest<{ token: string }>("/auth/me/calendar/feed-token", accessToken, "POST");
+  const feedUrl = `${apiUrl}/auth/calendar/${encodeURIComponent(token)}.ics`;
+  return {
+    feedUrl,
+    googleUrl: `https://calendar.google.com/calendar/u/0/r?cid=${encodeURIComponent(feedUrl)}`,
+    outlookUrl: `https://outlook.live.com/calendar/0/addfromurl?url=${encodeURIComponent(feedUrl)}`,
+  };
+}
+
+export async function downloadDoctorCalendar(accessToken: string, from: string, to: string) {
+  const data = await getDoctorCalendar(accessToken, from, to);
+  const format = (date: Date) => date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const escape = (value: string) => value.replace(/[\\;,]/g, (character) => `\\${character}`).replace(/\r?\n/g, "\\n");
+  const appointmentEvents = data.appointments.map((event) => ({
+    id: event.id,
+    start: new Date(event.startsAt),
+    end: new Date(new Date(event.startsAt).getTime() + event.durationMinutes * 60_000),
+    title: `Rendez-vous — ${event.patientName}`,
+  }));
+  const blockEvents = data.blocks.map((event) => ({ id: event.id, start: new Date(event.startsAt), end: new Date(event.endsAt), title: event.note ? `Indisponible — ${event.note}` : "Indisponible" }));
+  const lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Radoko//Doctor calendar//EN", "CALSCALE:GREGORIAN", ...[...appointmentEvents, ...blockEvents].flatMap((event) => ["BEGIN:VEVENT", `UID:${event.id}@radoko`, `DTSTAMP:${format(new Date())}`, `DTSTART:${format(event.start)}`, `DTEND:${format(event.end)}`, `SUMMARY:${escape(event.title)}`, "END:VEVENT"]), "END:VCALENDAR", ""];
+  return new Blob([lines.join("\r\n")], { type: "text/calendar;charset=utf-8" });
 }
 
 export function uploadVerificationDocument(accessToken: string, file: File) {

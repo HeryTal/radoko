@@ -11,6 +11,7 @@ import {
   Post,
   Query,
   Req,
+  Res,
   UseGuards,
   UseInterceptors,
   UploadedFile,
@@ -19,6 +20,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { Throttle } from '@nestjs/throttler';
 import { memoryStorage } from 'multer';
 import type { Express } from 'express';
+import type { Response } from 'express';
 import { AuthService } from './auth.service.js';
 import { CreateAppointmentDto } from './dto/create-appointment.dto.js';
 import { LoginDto } from './dto/login.dto.js';
@@ -33,6 +35,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto.js';
 import { CreateReviewDto } from './dto/create-review.dto.js';
 import { DoctorReviewResponseDto } from './dto/doctor-review-response.dto.js';
 import { CreateContactMessageDto } from './dto/create-contact-message.dto.js';
+import { CreateCalendarBlockDto } from './dto/create-calendar-block.dto.js';
 import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import type { AuthenticatedRequest } from './interfaces/authenticated-request.interface.js';
 
@@ -203,6 +206,43 @@ export class AuthController {
   @UseGuards(JwtAuthGuard)
   getAppointments(@Req() request: AuthenticatedRequest) {
     return this.authService.getAppointments(request.user.sub);
+  }
+
+  @Get('me/calendar')
+  @UseGuards(JwtAuthGuard)
+  getCalendar(
+    @Req() request: AuthenticatedRequest,
+    @Query('from') from?: string,
+    @Query('to') to?: string,
+  ) {
+    return this.authService.getCalendarData(request.user.sub, from, to);
+  }
+
+  @Post('me/calendar/blocks')
+  @UseGuards(JwtAuthGuard)
+  createCalendarBlock(@Req() request: AuthenticatedRequest, @Body() input: CreateCalendarBlockDto) {
+    return this.authService.createCalendarBlock(request.user.sub, input);
+  }
+
+  @Delete('me/calendar/blocks/:blockId')
+  @UseGuards(JwtAuthGuard)
+  deleteCalendarBlock(@Req() request: AuthenticatedRequest, @Param('blockId') blockId: string) {
+    return this.authService.deleteCalendarBlock(request.user.sub, blockId);
+  }
+
+  @Post('me/calendar/feed-token')
+  @UseGuards(JwtAuthGuard)
+  getCalendarFeedToken(@Req() request: AuthenticatedRequest) {
+    return this.authService.getCalendarFeedToken(request.user.sub);
+  }
+
+  @Get('calendar/:token.ics')
+  async calendarFeed(@Param('token') token: string, @Res() response: Response) {
+    const feed = await this.authService.renderCalendarFeed(token);
+    response.setHeader('Content-Type', 'text/calendar; charset=utf-8');
+    response.setHeader('Content-Disposition', 'inline; filename="radoko-calendar.ics"');
+    response.setHeader('Cache-Control', 'no-store');
+    response.send(feed);
   }
 
   @Get('public')

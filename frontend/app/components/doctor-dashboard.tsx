@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type FormEvent } from "react";
 import { DoctorAvailabilityEditor } from "./doctor-availability-editor";
+import { DoctorCalendar } from "./doctor-calendar";
 import { DoctorProfileEditor } from "./doctor-profile-editor";
 import { useConfirmation } from "./confirmation-dialog";
 import type { Appointment, AuthUser, DoctorReview } from "../lib/auth-api";
@@ -133,7 +134,7 @@ export function DoctorDashboard() {
     let frame = 0;
     const updateSection = () => {
       let current = "accueil";
-      for (const section of ["profil", "disponibilites", "rendez-vous"]) {
+      for (const section of ["profil", "disponibilites", "calendrier", "rendez-vous"]) {
         const element = document.getElementById(section);
         if (element && element.getBoundingClientRect().top <= 180) current = section;
       }
@@ -279,6 +280,10 @@ export function DoctorDashboard() {
             <span className="dashboard-nav-icon" aria-hidden="true">▦</span>
             Disponibilités
           </a>
+          <a className={`dashboard-nav-link${activeSection === "calendrier" ? " is-active" : ""}`} href="#calendrier" aria-current={activeSection === "calendrier" ? "location" : undefined} onClick={() => setActiveSection("calendrier")}>
+            <span className="dashboard-nav-icon" aria-hidden="true">▣</span>
+            <span>Calendrier</span>
+          </a>
           <a className={`dashboard-nav-link${activeSection === "rendez-vous" ? " is-active" : ""}`} href="#rendez-vous" aria-current={activeSection === "rendez-vous" ? "location" : undefined} onClick={() => setActiveSection("rendez-vous")}>
             <span className="dashboard-nav-icon" aria-hidden="true">◷</span>
             Rendez-vous
@@ -300,7 +305,7 @@ export function DoctorDashboard() {
           <div>
             <span className="dashboard-breadcrumb">Espace médecin</span>
             <span className="dashboard-breadcrumb-separator" aria-hidden="true">/</span>
-            <span className="dashboard-breadcrumb-current">{{ accueil: "Vue d’ensemble", profil: "Mon profil", disponibilites: "Disponibilités", "rendez-vous": "Rendez-vous" }[activeSection]}</span>
+            <span className="dashboard-breadcrumb-current">{{ accueil: "Vue d’ensemble", profil: "Mon profil", disponibilites: "Disponibilités", calendrier: "Calendrier", "rendez-vous": "Rendez-vous" }[activeSection]}</span>
           </div>
           <button className="dashboard-logout" type="button" onClick={() => confirm({ title: "Vous déconnecter ?", description: "Vous pourrez retrouver votre espace en vous reconnectant. Pensez à enregistrer vos modifications avant de partir.", label: "Se déconnecter", onConfirm: handleLogout })}>
             <span aria-hidden="true">↗</span> Déconnexion
@@ -437,6 +442,14 @@ export function DoctorDashboard() {
               <span className="dashboard-duration-note">Créneaux de {profile.consultationDurationMinutes} min · heure de Madagascar</span>
             </div>
             <DoctorAvailabilityEditor profile={profile} accessToken={accessToken} onProfileUpdate={setProfile} />
+          </section>
+
+          <section className="dashboard-panel dashboard-management-panel" id="calendrier">
+            <div className="dashboard-panel-heading">
+              <div><span className="dashboard-section-kicker">CALENDRIER</span><h2>Mon calendrier</h2></div>
+              <span className="dashboard-duration-note">Vue médecin</span>
+            </div>
+            <DoctorCalendar accessToken={accessToken} />
           </section>
 
           <section className="dashboard-panel dashboard-management-panel" id="rendez-vous">

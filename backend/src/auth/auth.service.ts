@@ -20,6 +20,7 @@ import { UpdateAvailabilityDto } from './dto/update-availability.dto.js';
 import { CreateReviewDto } from './dto/create-review.dto.js';
 import { DoctorReviewResponseDto } from './dto/doctor-review-response.dto.js';
 import { CreateContactMessageDto } from './dto/create-contact-message.dto.js';
+import { CreateCalendarBlockDto } from './dto/create-calendar-block.dto.js';
 import { UpdateDoctorProfileDto } from './dto/update-doctor-profile.dto.js';
 import { NotificationService } from '../notifications/notification.service.js';
 
@@ -685,18 +686,24 @@ Vous pouvez répondre directement à ${input.email}.`,
     });
     if (!doctorExists) throw new NotFoundException('Profil médecin introuvable.');
 
-    const appointments = await this.prisma.appointment.findMany({
+    const [appointments, blocks] = await Promise.all([
+      this.prisma.appointment.findMany({
       where: {
         doctorId,
         status: { in: ['REQUESTED', 'CONFIRMED'] },
         startsAt: { gte: new Date(startsAt.getTime() - 24 * 60 * 60_000), lt: endsAt },
       },
       select: { startsAt: true, durationMinutes: true },
-    });
-    return appointments.map((appointment) => ({
-      startsAt: appointment.startsAt,
-      durationMinutes: appointment.durationMinutes,
-    }));
+      }),
+      this.prisma.calendarBlock.findMany({
+        where: { doctorId, startsAt: { lt: endsAt }, endsAt: { gt: startsAt } },
+        select: { startsAt: true, endsAt: true },
+      }),
+    ]);
+    return [
+      ...appointments.map((appointment) => ({ startsAt: appointment.startsAt, durationMinutes: appointment.durationMinutes })),
+      ...blocks.map((block) => ({ startsAt: block.startsAt, durationMinutes: Math.ceil((block.endsAt.getTime() - block.startsAt.getTime()) / 60_000) })),
+    ];
   }
 
   async getAppointments(doctorId: string) {
@@ -721,6 +728,76 @@ Vous pouvez répondre directement à ${input.email}.`,
         status: true,
       },
     });
+  }
+
+  async getCalendarData(doctorId: string, fromInput?: string, toInput?: string) {
+    const from = fromInput ? new Date(fromInput) : new Date();
+    const to = toInput ? new Date(toInput) : new Date(from.getTime() + 32 * 24 * 60 * 60_000);
+    if (!Number.isFinite(from.getTime()) || !Number.isFinite(to.getTime()) || to <= from) {
+      throw new BadRequestException('La période du calendrier est invalide.');
+    }
+    const [appointments, blocks] = await Promise.all([
+      this.prisma.appointment.findMany({
+        where: { doctorId, startsAt: { lt: to }, AND: [{ startsAt: { gte: from } }], status: { notIn: ['DECLINED', 'CANCELLED'] } },
+        orderBy: { startsAt: 'asc' },
+        select: { id: true, startsAt: true, durationMinutes: true, patientName: true, status: true, reason: true },
+      }),
+      this.prisma.calendarBlock.findMany({ where: { doctorId, startsAt: { lt: to }, endsAt: { gt: from } }, orderBy: { startsAt: 'asc' } }),
+    ]);
+    return {
+      appointments,
+      blocks: blocks.map((block) => ({ id: block.id, startsAt: block.startsAt, endsAt: block.endsAt, note: block.note })),
+    };
+  }
+
+  async createCalendarBlock(doctorId: string, input: CreateCalendarBlockDto) {
+    const startsAt = new Date(input.startsAt);
+    const endsAt = new Date(input.endsAt);
+    if (!Number.isFinite(startsAt.getTime()) || !Number.isFinite(endsAt.getTime()) || endsAt <= startsAt || startsAt <= new Date()) {
+      throw new BadRequestException('La période bloquée est invalide.');
+    }
+    const appointment = await this.prisma.appointment.findFirst({
+      where: { doctorId, status: { in: ['REQUESTED', 'CONFIRMED'] }, startsAt: { lt: endsAt }, AND: [{ startsAt: { gte: new Date(startsAt.getTime() - 24 * 60 * 60_000) } }] },
+      select: { startsAt: true, durationMinutes: true },
+    });
+    if (appointment && appointment.startsAt.getTime() + appointment.durationMinutes * 60_000 > startsAt.getTime()) {
+      throw new ConflictException('Ce blocage chevauche un rendez-vous existant.');
+    }
+    const block = await this.prisma.calendarBlock.create({ data: { doctorId, startsAt, endsAt, note: input.note?.trim() || null } });
+    return { id: block.id, startsAt: block.startsAt, endsAt: block.endsAt, note: block.note };
+  }
+
+  async deleteCalendarBlock(doctorId: string, blockId: string) {
+    const deleted = await this.prisma.calendarBlock.deleteMany({ where: { id: blockId, doctorId } });
+    if (!deleted.count) throw new NotFoundException('Blocage introuvable.');
+    return { deleted: true };
+  }
+
+  async getCalendarFeedToken(doctorId: string) {
+    const current = await this.prisma.user.findUnique({ where: { id: doctorId }, select: { id: true } });
+    if (!current) throw new NotFoundException('Compte introuvable.');
+    const token = randomBytes(32).toString('base64url');
+    await this.prisma.user.update({ where: { id: doctorId }, data: { calendarFeedTokenHash: this.hashCancellationToken(token) } });
+    return { token };
+  }
+
+  async renderCalendarFeed(token: string) {
+    const doctor = await this.prisma.user.findUnique({ where: { calendarFeedTokenHash: this.hashCancellationToken(token) }, select: { id: true, name: true } });
+    if (!doctor) throw new NotFoundException('Flux calendrier introuvable.');
+    const from = new Date(Date.now() - 30 * 24 * 60 * 60_000);
+    const to = new Date(Date.now() + 365 * 24 * 60 * 60_000);
+    const data = await this.getCalendarData(doctor.id, from.toISOString(), to.toISOString());
+    const events = [
+      ...data.appointments.map((event) => ({ id: event.id, start: event.startsAt, end: new Date(event.startsAt.getTime() + event.durationMinutes * 60_000), title: `Rendez-vous — ${event.patientName}` })),
+      ...data.blocks.map((event) => ({ id: event.id, start: event.startsAt, end: event.endsAt, title: event.note ? `Indisponible — ${event.note}` : 'Indisponible' })),
+    ];
+    const format = (date: Date) => date.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+    const escape = (value: string) => value.replace(/[\\;,]/g, (character) => `\\${character}`).replace(/\r?\n/g, '\\n');
+    return [
+      'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Radoko//Doctor calendar//EN', 'CALSCALE:GREGORIAN',
+      ...events.flatMap((event) => ['BEGIN:VEVENT', `UID:${event.id}@radoko`, `DTSTAMP:${format(new Date())}`, `DTSTART:${format(event.start)}`, `DTEND:${format(event.end)}`, `SUMMARY:${escape(event.title)}`, 'END:VEVENT']),
+      'END:VCALENDAR',
+    ].join('\r\n') + '\r\n';
   }
 
   async createAppointment(doctorId: string, input: CreateAppointmentDto) {
@@ -1088,6 +1165,11 @@ Vous pouvez répondre directement à ${input.email}.`,
     )) {
       throw new ConflictException('Ce créneau vient d’être réservé. Veuillez en choisir un autre.');
     }
+    const blocked = await transaction.calendarBlock.findFirst({
+      where: { doctorId, startsAt: { lt: endsAt }, endsAt: { gt: startsAt } },
+      select: { id: true },
+    });
+    if (blocked) throw new ConflictException('Ce créneau est bloqué par le professionnel.');
   }
 
   private hashCancellationToken(token: string) {
