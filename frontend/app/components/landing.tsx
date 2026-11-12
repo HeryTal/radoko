@@ -15,6 +15,7 @@ const specialties = [
   { name: "Pédiatrie", icon: "child", detail: "Grandir en bonne santé" },
   { name: "Ophtalmologie", icon: "eye", detail: "Prendre soin de votre regard" },
   { name: "Chirurgie dentaire", icon: "tooth", detail: "Retrouver le plaisir de sourire" },
+  { name: "Dentiste", icon: "tooth", detail: "Des soins pour votre sourire et votre santé buccale" },
   { name: "Infirmier·ère", icon: "plus", detail: "Des soins infirmiers près de chez vous" },
   { name: "Sage-femme", icon: "child", detail: "Un accompagnement à chaque étape" },
 ] as const;

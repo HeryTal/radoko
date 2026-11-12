@@ -15,6 +15,7 @@ const specialties = [
   "Médecine générale",
   "Cardiologie",
   "Chirurgie dentaire",
+  "Dentiste",
   "Gastro-entérologie",
   "Ophtalmologie",
   "Pédiatrie",
